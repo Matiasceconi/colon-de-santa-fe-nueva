@@ -332,7 +332,7 @@ export default function MatchImport({ reports, onReportsChange, parseCSVFile }) 
             </div>
             <div>
               <label className="text-xs text-zinc-400 mb-1 block">Estadio / Lugar</label>
-              <input className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500" placeholder="Ej: Estadio Norberto Tomaghello" value={form.location} onChange={(e) => set("location", e.target.value)} />
+              <input className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500" placeholder="Ej: Estadio Brigadier General Estanislao López" value={form.location} onChange={(e) => set("location", e.target.value)} />
             </div>
           </div>
           <div className="flex justify-end gap-2">
