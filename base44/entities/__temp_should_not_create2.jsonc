@@ -6,5 +6,23 @@
     }
   },
   "required": [],
-  "name": "__temp_should_not_create2"
+  "name": "__temp_should_not_create2",
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
