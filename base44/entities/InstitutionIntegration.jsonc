@@ -1,0 +1,66 @@
+{
+  "name": "InstitutionIntegration",
+  "type": "object",
+  "properties": {
+    "institution_id": {
+      "type": "string",
+      "description": "InstitutionProfile al que pertenece la integraci\u00f3n"
+    },
+    "integration_key": {
+      "type": "string",
+      "description": "Clave estable, por ejemplo medical_google_sheet"
+    },
+    "provider": {
+      "type": "string",
+      "description": "Proveedor externo"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "config": {
+      "type": "object",
+      "default": {},
+      "description": "Configuraci\u00f3n no secreta de la integraci\u00f3n; credenciales permanecen en connectors/secrets"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "updated_by_id": {
+      "type": "string"
+    },
+    "updated_by_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "institution_id",
+    "integration_key",
+    "provider"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

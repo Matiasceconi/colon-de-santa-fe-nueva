@@ -1,0 +1,118 @@
+{
+  "name": "KinesiologyCase",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "squad_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "medical_episode_id": {
+      "type": "string",
+      "description": "Episodio m\u00e9dico que origina el proceso kin\u00e9sico. Kinesiolog\u00eda no crea diagn\u00f3sticos paralelos."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "completed"
+      ],
+      "default": "active"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "initial",
+        "intermediate",
+        "advanced",
+        "on_field",
+        "team_integration"
+      ],
+      "default": "initial",
+      "description": "Etapa operativa orientativa. El avance siempre es manual/profesional."
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "target_return_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "responsible_name": {
+      "type": "string"
+    },
+    "goals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "restrictions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "progression_criteria": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": [],
+      "description": "Criterios documentados por dominio: s\u00edntoma, fuerza, funci\u00f3n, carrera, confianza u otro."
+    },
+    "notes": {
+      "type": "string"
+    },
+    "shared_with_pf": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_review_at": {
+      "type": "string"
+    },
+    "closed_at": {
+      "type": "string"
+    },
+    "created_by_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "player_id",
+    "medical_episode_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "name": "GPSObjectiveRule",
+  "type": "object",
+  "properties": {
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel al que aplica"
+    },
+    "season_id": {
+      "type": "string",
+      "description": "Temporada"
+    },
+    "md_code": {
+      "type": "string",
+      "description": "C\u00f3digo MD; vac\u00edo = cualquier MD"
+    },
+    "physical_objective": {
+      "type": "string",
+      "description": "Objetivo f\u00edsico; vac\u00edo = cualquiera"
+    },
+    "position": {
+      "type": "string",
+      "description": "Posici\u00f3n o grupo posicional; vac\u00edo = cualquiera"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "Jugador espec\u00edfico; vac\u00edo = cualquiera"
+    },
+    "player_name": {
+      "type": "string",
+      "description": "Nombre desnormalizado del jugador"
+    },
+    "metric_key": {
+      "type": "string",
+      "description": "M\u00e9trica GPS"
+    },
+    "reference_type_override": {
+      "type": "string",
+      "description": "Fuente de referencia espec\u00edfica para esta regla; vac\u00edo = hereda configuraci\u00f3n"
+    },
+    "target_min_pct": {
+      "type": "number",
+      "description": "L\u00edmite inferior del objetivo como % de referencia"
+    },
+    "target_max_pct": {
+      "type": "number",
+      "description": "L\u00edmite superior del objetivo como % de referencia"
+    },
+    "target_min_value": {
+      "type": "number",
+      "description": "L\u00edmite absoluto inferior opcional"
+    },
+    "target_max_value": {
+      "type": "number",
+      "description": "L\u00edmite absoluto superior opcional"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "notes": {
+      "type": "string",
+      "description": "Justificaci\u00f3n metodol\u00f3gica u observaci\u00f3n"
+    },
+    "updated_by": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "squad_id",
+    "metric_key"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

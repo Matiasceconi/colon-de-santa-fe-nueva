@@ -1,0 +1,60 @@
+{
+  "name": "GPSReportLayoutConfiguration",
+  "type": "object",
+  "properties": {
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel al que aplica la vista GPS"
+    },
+    "squad_name": {
+      "type": "string",
+      "description": "Nombre del plantel"
+    },
+    "season_id": {
+      "type": "string",
+      "description": "Temporada"
+    },
+    "table_config": {
+      "type": "object",
+      "default": {},
+      "description": "Configuraci\u00f3n compartida de la tabla por jugador"
+    },
+    "charts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": [],
+      "description": "Gr\u00e1ficos fijados que se muestran en todas las sesiones del plantel"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "Fecha/hora ISO de actualizaci\u00f3n"
+    }
+  },
+  "required": [
+    "squad_id"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

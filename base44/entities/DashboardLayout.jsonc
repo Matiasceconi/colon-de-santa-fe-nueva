@@ -1,0 +1,75 @@
+{
+  "name": "DashboardLayout",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario due\u00f1o del layout"
+    },
+    "dashboard_type": {
+      "type": "string",
+      "enum": [
+        "club",
+        "staff"
+      ],
+      "default": "club",
+      "description": "Tablero al que pertenece la configuraci\u00f3n"
+    },
+    "layout_version": {
+      "type": "number",
+      "default": 1,
+      "description": "Versi\u00f3n del dise\u00f1o para migrar tableros antiguos sin perder widgets personales"
+    },
+    "widgets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID \u00fanico del widget en el layout"
+          },
+          "type": {
+            "type": "string",
+            "description": "Tipo de widget"
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "sm",
+              "md",
+              "lg",
+              "full"
+            ],
+            "default": "md",
+            "description": "Tama\u00f1o del widget"
+          },
+          "config": {
+            "type": "object",
+            "default": {},
+            "description": "Configuraci\u00f3n espec\u00edfica del widget"
+          }
+        }
+      },
+      "default": [],
+      "description": "Lista de widgets del tablero en orden"
+    }
+  },
+  "required": [
+    "user_id"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

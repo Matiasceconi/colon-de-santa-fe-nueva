@@ -1,0 +1,115 @@
+{
+  "name": "GPSReferenceConfiguration",
+  "type": "object",
+  "properties": {
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel al que aplica la configuraci\u00f3n"
+    },
+    "squad_name": {
+      "type": "string",
+      "description": "Nombre del plantel desnormalizado"
+    },
+    "season_id": {
+      "type": "string",
+      "description": "Temporada de la configuraci\u00f3n"
+    },
+    "model": {
+      "type": "string",
+      "enum": [
+        "hybrid",
+        "competition",
+        "microcycle",
+        "custom"
+      ],
+      "default": "hybrid",
+      "description": "Modelo general de referencias"
+    },
+    "metric_rules": {
+      "type": "object",
+      "default": {},
+      "description": "Reglas por m\u00e9trica: reference_type, manual_value y metadatos"
+    },
+    "fallback_order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "individual",
+        "position",
+        "squad"
+      ],
+      "description": "Orden de fallback cuando no hay muestra suficiente"
+    },
+    "min_competition_matches": {
+      "type": "number",
+      "default": 3,
+      "description": "M\u00ednimo de partidos v\u00e1lidos para referencia individual"
+    },
+    "min_match_minutes": {
+      "type": "number",
+      "default": 80,
+      "description": "Minutos m\u00ednimos para incluir un partido en el perfil competitivo"
+    },
+    "competition_window": {
+      "type": "number",
+      "default": 5,
+      "description": "Cantidad m\u00e1xima de partidos recientes usados"
+    },
+    "min_md_sessions": {
+      "type": "number",
+      "default": 3,
+      "description": "M\u00ednimo de sesiones equivalentes para referencia MD"
+    },
+    "md_window": {
+      "type": "number",
+      "default": 5,
+      "description": "Cantidad m\u00e1xima de sesiones recientes del mismo MD usadas"
+    },
+    "min_position_players": {
+      "type": "number",
+      "default": 3,
+      "description": "Cantidad m\u00ednima de jugadores para fallback posicional"
+    },
+    "threshold_definitions": {
+      "type": "object",
+      "default": {},
+      "description": "Definici\u00f3n metodol\u00f3gica de HSR, sprint, aceleraciones y desaceleraciones"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Configuraci\u00f3n activa"
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "Usuario que actualiz\u00f3"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "Fecha/hora ISO de actualizaci\u00f3n"
+    }
+  },
+  "required": [
+    "squad_id"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

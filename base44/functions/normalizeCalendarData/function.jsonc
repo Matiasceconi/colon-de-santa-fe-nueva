@@ -1,0 +1,6 @@
+{
+  "name": "normalizeCalendarData",
+  "entry": "entry.ts",
+  "description": "Normaliza tipos y horarios del calendario, crea claves canónicas, vincula sesiones cuando la relación es inequívoca y audita vínculos/duplicados sin borrar datos.",
+  "timeout": 120
+}

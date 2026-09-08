@@ -1,0 +1,167 @@
+{
+  "name": "MatchEvent",
+  "type": "object",
+  "properties": {
+    "match_id": {
+      "type": "string",
+      "description": "Partido MatchReport vinculado"
+    },
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel del partido"
+    },
+    "season_id": {
+      "type": "string",
+      "description": "Temporada del partido"
+    },
+    "event_key": {
+      "type": "string",
+      "description": "Clave can\u00f3nica estable match:event para deduplicar manual/integraci\u00f3n"
+    },
+    "period": {
+      "type": "string",
+      "enum": [
+        "1T",
+        "2T",
+        "ET1",
+        "ET2",
+        "PEN",
+        "PRE",
+        "POST"
+      ],
+      "default": "1T",
+      "description": "Per\u00edodo del evento"
+    },
+    "minute": {
+      "type": "number",
+      "description": "Minuto base del evento"
+    },
+    "added_minute": {
+      "type": "number",
+      "default": 0,
+      "description": "Tiempo a\u00f1adido; 45+2 = minute 45, added_minute 2"
+    },
+    "sort_second": {
+      "type": "number",
+      "default": 0,
+      "description": "Orden adicional cuando hay varios eventos en el mismo minuto"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "goal",
+        "own_goal",
+        "penalty_goal",
+        "penalty_missed",
+        "yellow_card",
+        "second_yellow",
+        "red_card",
+        "substitution",
+        "injury",
+        "var",
+        "kickoff",
+        "halftime",
+        "fulltime",
+        "other"
+      ],
+      "description": "Tipo can\u00f3nico del evento"
+    },
+    "team_side": {
+      "type": "string",
+      "enum": [
+        "own",
+        "rival",
+        "neutral"
+      ],
+      "default": "own",
+      "description": "Equipo al que corresponde el evento"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "Jugador principal propio cuando corresponde"
+    },
+    "player_name": {
+      "type": "string",
+      "description": "Nombre desnormalizado del jugador principal"
+    },
+    "secondary_player_id": {
+      "type": "string",
+      "description": "Jugador secundario/asistente propio"
+    },
+    "secondary_player_name": {
+      "type": "string",
+      "description": "Nombre del jugador secundario/asistente"
+    },
+    "player_in_id": {
+      "type": "string",
+      "description": "Jugador que ingresa en un cambio"
+    },
+    "player_in_name": {
+      "type": "string"
+    },
+    "player_out_id": {
+      "type": "string",
+      "description": "Jugador que sale en un cambio"
+    },
+    "player_out_name": {
+      "type": "string"
+    },
+    "rival_player_name": {
+      "type": "string",
+      "description": "Jugador rival si la fuente lo provee"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo corto visible"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observaci\u00f3n manual o detalle del proveedor"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "integration"
+      ],
+      "default": "manual",
+      "description": "Origen can\u00f3nico del dato"
+    },
+    "provider": {
+      "type": "string",
+      "description": "Proveedor externo opcional"
+    },
+    "external_event_id": {
+      "type": "string",
+      "description": "ID externo estable del evento"
+    },
+    "external_match_id": {
+      "type": "string",
+      "description": "ID externo del partido en el proveedor"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "needs_review"
+      ],
+      "default": "confirmed",
+      "description": "Estado de revisi\u00f3n del dato integrado"
+    },
+    "imported_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "updated_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "match_id",
+    "event_key",
+    "period",
+    "event_type"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "DailySchedule",
+  "type": "object",
+  "properties": {
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel al que pertenece el cronograma"
+    },
+    "squad_name": {
+      "type": "string",
+      "description": "Nombre del plantel"
+    },
+    "season_id": {
+      "type": "string",
+      "description": "Temporada"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha operativa"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "closed"
+      ],
+      "default": "active",
+      "description": "Estado del cronograma del d\u00eda"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas generales del d\u00eda"
+    },
+    "created_from_template_id": {
+      "type": "string",
+      "description": "Plantilla aplicada si corresponde"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "description": "\u00daltima sincronizaci\u00f3n con fuentes can\u00f3nicas"
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "Usuario que realiz\u00f3 la \u00faltima modificaci\u00f3n"
+    }
+  },
+  "required": [
+    "squad_id",
+    "date"
+  ]
+}

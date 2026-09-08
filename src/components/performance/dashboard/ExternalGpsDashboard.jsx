@@ -1,0 +1,543 @@
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { base44 } from "@/api/base44Client";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useSidebarCollapse } from "@/components/staff/Layout";
+import { isGoalkeeper } from "@/components/squad/squadConstants";
+import { dedupeMedicalEpisodes, dedupeMedicalStatuses } from "@/components/medical/medicalDeduplication";
+import { avg, withRetry } from "../externalGpsLoadUtils";
+import ImportHistoricalGPSModal from "../ImportHistoricalGPSModal";
+import GpsDashboardHeader from "./GpsDashboardHeader";
+import GpsSessionLoadPanel from "./GpsSessionLoadPanel";
+import GpsIndividualPlayerTab from "./GpsIndividualLoadMonitor";
+import GpsIndividualMatchTab from "./GpsIndividualMatchTab";
+import GpsKinesiologyLoadTab from "./GpsReturnToTeamTab";
+
+
+function positionGroup(position, player) {
+  if (isGoalkeeper(player || { position })) return "Arquero";
+  const text = (position || "").toLowerCase();
+  if (text.includes("central")) return "Central";
+  if (text.includes("lateral")) return "Lateral";
+  if (text.includes("volante") || text.includes("medio")) return "Volante";
+  if (text.includes("extremo")) return "Extremo";
+  if (text.includes("delantero") || text.includes("punta")) return "Delantero";
+  return "";
+}
+
+function sessionEvent(session) {
+  const text = `${session.session_type || ""} ${session.title || ""} ${session.match_day_code || ""}`.toLowerCase();
+  return text.includes("partido") || session.match_day_code === "MD" ? "Partido" : "Entrenamiento";
+}
+
+function sessionDuration(session, rows = []) {
+  const direct = Number(session.duration_minutes || session.minutes || 0);
+  if (direct) return direct;
+  const values = rows.map((r) => Number(r.duration_minutes || r.minutes || r.duration || 0)).filter(Boolean);
+  return values.length ? Math.max(...values) : 0;
+}
+
+function minutesMatch(value, filters) {
+  const mode = filters.minutesMode || "Todos";
+  const min = Number(filters.minutesMin || 0);
+  const max = Number(filters.minutesMax || 0);
+  if (mode === "gt") return value > min;
+  if (mode === "lt") return value < min;
+  if (mode === "between") return value >= min && value <= max;
+  return true;
+}
+
+export default function ExternalGpsDashboard() {
+  const { activeSquadId } = useWorkspace();
+  const { collapsed: sidebarCollapsed, setCollapsed: setSidebarCollapsed } = useSidebarCollapse();
+  const dashboardRef = useRef(null);
+  const previousSidebarCollapsedRef = useRef(null);
+  const [wideMode, setWideMode] = useState(false);
+
+  const [squads, setSquads] = useState([]);
+  const [selectedSquadId, setSelectedSquadId] = useState(activeSquadId || "");
+  const [selectedSeason, setSelectedSeason] = useState("");
+  const [players, setPlayers] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [allSessionsData, setAllSessionsData] = useState([]);
+  const [gpsBySession, setGpsBySession] = useState({});
+  const [allGpsBySession, setAllGpsBySession] = useState({});
+  const [physicalObjectives, setPhysicalObjectives] = useState([]);
+  const [competitionProfiles, setCompetitionProfiles] = useState([]);
+  const [microcycleProfiles, setMicrocycleProfiles] = useState([]);
+  const [medicalEpisodes, setMedicalEpisodes] = useState([]);
+  const [medicalStatuses, setMedicalStatuses] = useState([]);
+  const [memberships, setMemberships] = useState([]);
+  const [matchReports, setMatchReports] = useState([]);
+  const [matchGpsByMatch, setMatchGpsByMatch] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [autoSelectedSquadName, setAutoSelectedSquadName] = useState("");
+  const [selectedSessionId, setSelectedSessionId] = useState("");
+  const [selectedPlayerId, setSelectedPlayerId] = useState("");
+  const [activeTab, setActiveTab] = useState("session-load");
+  const [sessionFilters, setSessionFilters] = useState({
+    squadId: activeSquadId || "all",
+    season: "",
+    dateFrom: "",
+    dateTo: "",
+    playerSearch: "",
+    playerIds: [],
+    position: "Todos",
+    event: "Todos",
+    objective: "Todos",
+    md: "Todos",
+    minutesMode: "Todos",
+    minutesMin: "",
+    minutesMax: "",
+  });
+
+  useEffect(() => {
+    if (!wideMode && previousSidebarCollapsedRef.current !== null) {
+      setSidebarCollapsed(previousSidebarCollapsedRef.current);
+      previousSidebarCollapsedRef.current = null;
+    }
+  }, [wideMode, setSidebarCollapsed]);
+
+  useEffect(() => {
+    return () => {
+      if (previousSidebarCollapsedRef.current !== null) {
+        setSidebarCollapsed(previousSidebarCollapsedRef.current);
+      }
+    };
+  }, [setSidebarCollapsed]);
+
+  function handleWideModeChange(nextWideMode) {
+    if (nextWideMode) {
+      previousSidebarCollapsedRef.current = sidebarCollapsed;
+      setSidebarCollapsed(true);
+      setWideMode(true);
+      return;
+    }
+    setWideMode(false);
+  }
+
+  useEffect(() => {
+    if (activeSquadId) {
+      setSelectedSquadId(activeSquadId);
+      setSessionFilters((prev) => ({ ...prev, squadId: prev.squadId === "all" ? activeSquadId : prev.squadId }));
+    }
+  }, [activeSquadId]);
+
+  useEffect(() => {
+    async function loadSquads() {
+      try {
+        const [all, sessionRows, gpsRows] = await Promise.all([
+          base44.entities.Squad.list("-season", 200),
+          base44.entities.TrainingSession.list("-date", 500),
+          base44.entities.SessionGPSData.list("-created_date", 5000).catch(() => []),
+        ]);
+        setSquads(all);
+
+        const squadBySession = Object.fromEntries(sessionRows.map((session) => [session.id, session.squad_id]));
+        const gpsCountBySquad = new Map();
+        gpsRows.forEach((row) => {
+          const squadId = squadBySession[row.session_id];
+          if (squadId) gpsCountBySquad.set(squadId, (gpsCountBySquad.get(squadId) || 0) + 1);
+        });
+
+        const requested = all.find((s) => s.id === activeSquadId);
+        let current = requested;
+        if (!current || !gpsCountBySquad.get(current.id)) {
+          current = [...all]
+            .filter((s) => gpsCountBySquad.get(s.id))
+            .sort((a, b) => (gpsCountBySquad.get(b.id) || 0) - (gpsCountBySquad.get(a.id) || 0))[0] || requested || all[0];
+        }
+
+        if (current) {
+          setSelectedSquadId(current.id);
+          setSelectedSeason(current.season || "");
+          setSessionFilters((prev) => ({ ...prev, squadId: current.id, season: current.season || prev.season }));
+          setAutoSelectedSquadName(requested && requested.id !== current.id ? current.name : "");
+        }
+      } catch (err) {
+        console.error("loadSquads error:", err);
+      }
+    }
+    loadSquads();
+     
+  }, []);
+
+  const seasons = useMemo(() => [...new Set(squads.map((s) => s.season).filter(Boolean))].sort().reverse(), [squads]);
+  const selectedSquad = useMemo(() => squads.find((s) => s.id === selectedSquadId), [squads, selectedSquadId]);
+
+  useEffect(() => {
+    if (selectedSeason) setSessionFilters((prev) => ({ ...prev, season: prev.season || selectedSeason }));
+  }, [selectedSeason]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [allPlayers, allSessions, allCompetitionProfiles, allMicrocycleProfiles, allMedicalEpisodes, allMedicalStatuses, allMemberships, allMatchReports, allCatapultReports] = await Promise.all([
+        base44.entities.Player.list("-created_date", 500),
+        selectedSquadId ? base44.entities.TrainingSession.filter({ squad_id: selectedSquadId }, "-date", 500) : base44.entities.TrainingSession.list("-date", 500),
+        base44.entities.PlayerCompetitionProfile.list("-updated_at", 1000),
+        base44.entities.PlayerMicrocycleGPSProfile.list("-updated_at", 2000),
+        base44.entities.MedicalEpisode.list("-fecha_inicio_tto", 2000),
+        base44.entities.MedicalCurrentStatus.list("-updated_at", 2000),
+        base44.entities.SquadMembership.list("-created_date", 2000),
+        base44.entities.MatchReport.list("-date", 500),
+        base44.entities.CatapultReport.list("-date", 5000).catch(() => []),
+      ]);
+      const objectiveRows = await base44.entities.PhysicalObjective.list("order", 100);
+      setPhysicalObjectives(objectiveRows.filter((o) => o.active !== false && o.hidden !== true).map((o) => o.name).filter(Boolean));
+      setAllSessionsData(allSessions);
+      setPlayers(allPlayers.filter((p) => p.active !== false));
+      setCompetitionProfiles(allCompetitionProfiles.filter((p) => (!selectedSquadId || p.squad_id === selectedSquadId) && (!selectedSeason || p.season_id === selectedSeason)));
+      setMicrocycleProfiles(allMicrocycleProfiles.filter((p) => (!selectedSquadId || p.squad_id === selectedSquadId) && (!selectedSeason || p.season_id === selectedSeason)));
+      const scopedMedicalEpisodes = allMedicalEpisodes.filter((e) => (!selectedSquadId || !e.squad_id || e.squad_id === selectedSquadId) && (!selectedSeason || !e.season_id || e.season_id === selectedSeason));
+      const scopedMedicalStatuses = allMedicalStatuses.filter((s) => (!selectedSquadId || !s.squad_id || s.squad_id === selectedSquadId));
+      setMedicalEpisodes(dedupeMedicalEpisodes(scopedMedicalEpisodes).episodes);
+      setMedicalStatuses(dedupeMedicalStatuses(scopedMedicalStatuses));
+      setMemberships(allMemberships.filter((m) => m.squad_id === selectedSquadId && m.status !== "fuera_del_plantel" && m.status !== "inactivo" && !m.effective_to));
+      const scopedMatchReports = allMatchReports.filter((m) => (!selectedSquadId || !m.squad_id || m.squad_id === selectedSquadId) && (!selectedSeason || !m.season_id || m.season_id === selectedSeason));
+      setMatchReports(scopedMatchReports);
+      const scopedMatchIds = new Set(scopedMatchReports.map((match) => match.id));
+      const groupedMatchGps = {};
+      allCatapultReports.filter((row) => scopedMatchIds.has(row.session_id)).forEach((row) => {
+        if (!groupedMatchGps[row.session_id]) groupedMatchGps[row.session_id] = [];
+        groupedMatchGps[row.session_id].push(row);
+      });
+      setMatchGpsByMatch(groupedMatchGps);
+
+      const squadSessions = allSessions.filter((s) => selectedSquadId && s.squad_id === selectedSquadId && (!selectedSeason || !s.season_id || s.season_id === selectedSeason));
+      setSessions(squadSessions);
+
+      // Consultar SessionGPSData solo para las sesiones del plantel
+      const squadSessionIds = squadSessions.map((s) => s.id);
+      let grouped = {};
+      let allGrouped = {};
+      if (squadSessionIds.length > 0) {
+        // Cargar en lotes si hay muchas sesiones
+        const batchSize = 50;
+        for (let i = 0; i < squadSessionIds.length; i += batchSize) {
+          const batch = squadSessionIds.slice(i, i + batchSize);
+          const rows = await withRetry(() => base44.entities.SessionGPSData.filter({ session_id: { $in: batch } }, "-created_date", 5000).catch(() => []));
+          rows.forEach((r) => {
+            if (!grouped[r.session_id]) grouped[r.session_id] = [];
+            grouped[r.session_id].push(r);
+            if (!allGrouped[r.session_id]) allGrouped[r.session_id] = [];
+            allGrouped[r.session_id].push(r);
+          });
+        }
+      }
+      setGpsBySession(grouped);
+      setAllGpsBySession(allGrouped);
+      if (squadSessions.length > 0) {
+        setSelectedSessionId((prev) => prev && squadSessions.some((s) => s.id === prev) ? prev : squadSessions[0].id);
+      } else {
+        setSelectedSessionId("");
+      }
+    } catch (err) {
+      console.error("ExternalGpsDashboard load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedSquadId, selectedSeason]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const reloadTimerRef = useRef(null);
+  const debouncedLoad = useCallback(() => {
+    if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+    reloadTimerRef.current = setTimeout(() => { load(); reloadTimerRef.current = null; }, 400);
+  }, [load]);
+
+  useEffect(() => {
+    const unsubscribeCatapult = base44.entities.CatapultReport.subscribe(debouncedLoad);
+    const unsubscribeSession = base44.entities.TrainingSession.subscribe(debouncedLoad);
+    const unsubscribeGps = base44.entities.SessionGPSData.subscribe(debouncedLoad);
+    const unsubscribeMatch = base44.entities.MatchReport.subscribe(debouncedLoad);
+    return () => {
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+      unsubscribeCatapult?.(); unsubscribeSession?.(); unsubscribeGps?.(); unsubscribeMatch?.();
+    };
+  }, [debouncedLoad]);
+
+  const playerMap = useMemo(() => {
+    const map = {};
+    players.forEach((p) => { map[p.id] = p; });
+    return map;
+  }, [players]);
+
+  const competitionMap = useMemo(() => {
+    const map = {};
+    competitionProfiles.forEach((c) => { map[c.player_id] = c; });
+    return map;
+  }, [competitionProfiles]);
+
+  // Todas las filas GPS del plantel (excluye arqueros e inactivos del promedio)
+  const allEnrichedRows = useMemo(() => {
+    const sessionMap = {};
+    sessions.forEach((s) => { sessionMap[s.id] = s; });
+    return Object.entries(gpsBySession).flatMap(([sessionId, rows]) =>
+      rows
+        .filter((r) => r.include_in_session_average !== false)
+        .map((r) => {
+          const player = playerMap[r.player_id];
+          return { ...r, date: sessionMap[sessionId]?.date, position: player?.position || "", player_name: r.player_name || player?.full_name || "" };
+        })
+        .filter((r) => !isGoalkeeper(playerMap[r.player_id]))
+    );
+  }, [gpsBySession, sessions, playerMap]);
+
+  const sortedSessions = useMemo(() => [...sessions].sort((a, b) => (b.date || "").localeCompare(a.date || "")), [sessions]);
+
+  const sessionsForList = useMemo(() => sortedSessions.map((s) => ({
+    ...s,
+    playerCount: new Set((gpsBySession[s.id] || []).filter((r) => r.include_in_session_average !== false).map((r) => r.player_id)).size,
+  })), [sortedSessions, gpsBySession]);
+
+  const analyticsObjectives = useMemo(() => {
+    const fromSessions = allSessionsData.map((s) => s.session_objective).filter(Boolean);
+    return [...new Set([...physicalObjectives, ...fromSessions])].sort((a, b) => a.localeCompare(b));
+  }, [physicalObjectives, allSessionsData]);
+
+  const filteredAnalyticsSessions = useMemo(() => {
+    return [...allSessionsData]
+      .filter((session) => {
+        const rows = allGpsBySession[session.id] || [];
+        const squad = squads.find((s) => s.id === session.squad_id);
+        const season = session.season_id || squad?.season || "";
+        const duration = sessionDuration(session, rows);
+        const selectedPlayers = sessionFilters.playerIds || [];
+        const hasPlayerOrPositionFilter = selectedPlayers.length > 0 || (sessionFilters.position && sessionFilters.position !== "Todos");
+        const matchingRows = rows.filter((row) => {
+          const player = playerMap[row.player_id];
+          const rowPosition = player?.position || row.position || "";
+          const playerOk = selectedPlayers.length === 0 || selectedPlayers.includes(row.player_id);
+          const positionOk = !sessionFilters.position || sessionFilters.position === "Todos" || positionGroup(rowPosition, player) === sessionFilters.position;
+          return playerOk && positionOk;
+        });
+        if (sessionFilters.squadId && sessionFilters.squadId !== "all" && session.squad_id !== sessionFilters.squadId) return false;
+        if (sessionFilters.season && season !== sessionFilters.season) return false;
+        if (sessionFilters.dateFrom && session.date < sessionFilters.dateFrom) return false;
+        if (sessionFilters.dateTo && session.date > sessionFilters.dateTo) return false;
+        if (sessionFilters.event && sessionFilters.event !== "Todos" && sessionEvent(session) !== sessionFilters.event) return false;
+        if (sessionFilters.objective && sessionFilters.objective !== "Todos" && session.session_objective !== sessionFilters.objective) return false;
+        if (sessionFilters.md && sessionFilters.md !== "Todos" && (session.match_day_code || session.microcycle_day || "") !== sessionFilters.md) return false;
+        if (!minutesMatch(duration, sessionFilters)) return false;
+        if (hasPlayerOrPositionFilter && matchingRows.length === 0) return false;
+        return true;
+      })
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+      .map((session) => ({
+        ...session,
+        playerCount: new Set((allGpsBySession[session.id] || []).filter((r) => r.include_in_session_average !== false).map((r) => r.player_id)).size,
+        durationForFilter: sessionDuration(session, allGpsBySession[session.id] || []),
+      }));
+  }, [allSessionsData, allGpsBySession, squads, sessionFilters, playerMap]);
+
+  const selectedAnalyticsSession = useMemo(() => {
+    return filteredAnalyticsSessions.find((s) => s.id === selectedSessionId) || filteredAnalyticsSessions[0] || null;
+  }, [filteredAnalyticsSessions, selectedSessionId]);
+
+  useEffect(() => {
+    if (activeTab === "sessions" && selectedAnalyticsSession && selectedSessionId !== selectedAnalyticsSession.id) {
+      setSelectedSessionId(selectedAnalyticsSession.id);
+    }
+  }, [activeTab, selectedAnalyticsSession, selectedSessionId]);
+
+  const analyticsSessionRows = useMemo(() => {
+    if (!selectedAnalyticsSession) return [];
+    const selectedPlayers = sessionFilters.playerIds || [];
+    return (allGpsBySession[selectedAnalyticsSession.id] || [])
+      .filter((r) => r.include_in_session_average !== false)
+      .map((r) => {
+        const player = playerMap[r.player_id];
+        return { ...r, position: player?.position || r.position || "", player_name: r.player_name || player?.full_name || "" };
+      })
+      .filter((r) => selectedPlayers.length === 0 || selectedPlayers.includes(r.player_id))
+      .filter((r) => !sessionFilters.position || sessionFilters.position === "Todos" || positionGroup(r.position, playerMap[r.player_id]) === sessionFilters.position);
+  }, [allGpsBySession, selectedAnalyticsSession, sessionFilters.playerIds, sessionFilters.position, playerMap]);
+
+  const analyticsSessionSummary = useMemo(() => ({
+    playersCount: analyticsSessionRows.length,
+    avgDistance: avg(analyticsSessionRows.map((r) => r.total_distance)),
+    avgMMin: avg(analyticsSessionRows.map((r) => r.m_min)),
+    avgPlayerLoad: avg(analyticsSessionRows.map((r) => r.player_load)),
+    avgSprints: avg(analyticsSessionRows.map((r) => r.sprints)),
+  }), [analyticsSessionRows]);
+
+  const analyticsHighlights = useMemo(() => {
+    function top(key) {
+      const withVal = analyticsSessionRows.filter((r) => r[key] != null);
+      if (!withVal.length) return null;
+      const best = withVal.reduce((a, b) => (b[key] > a[key] ? b : a));
+      return { name: best.player_name, value: best[key] };
+    }
+    return {
+      maxDistance: top("total_distance"),
+      maxSprints: top("sprints"),
+      maxPlayerLoad: top("player_load"),
+      maxSmax: top("smax"),
+      maxRhie: top("rhie_bouts"),
+    };
+  }, [analyticsSessionRows]);
+
+  const kpis = useMemo(() => {
+    const sessionsWithGps = sessions.filter((s) => (gpsBySession[s.id] || []).length > 0);
+    const playersPerSession = sessionsWithGps.map((s) => new Set((gpsBySession[s.id] || []).map((r) => r.player_id)).size);
+    return {
+      sessionsCount: sessionsWithGps.length,
+      lastSessionDate: sortedSessions[0]?.date,
+      lastSessionTitle: sortedSessions[0] ? `${sortedSessions[0].match_day_code || ""} ${sortedSessions[0].title || ""}`.trim() : "",
+      avgPlayersPerSession: avg(playersPerSession),
+      avgTotalDistance: avg(allEnrichedRows.map((r) => r.total_distance)),
+      avgPlayerLoad: avg(allEnrichedRows.map((r) => r.player_load)),
+      avgSprints: avg(allEnrichedRows.map((r) => r.sprints)),
+    };
+  }, [sessions, gpsBySession, sortedSessions, allEnrichedRows]);
+
+  const rosterPlayerIds = useMemo(() => new Set(memberships.map((m) => m.player_id)), [memberships]);
+  const rosterPlayers = useMemo(() => players.filter((p) => rosterPlayerIds.has(p.id)), [players, rosterPlayerIds]);
+
+  const selectedSession = sessions.find((s) => s.id === selectedSessionId);
+  const sessionRows = useMemo(() => {
+    const rows = (gpsBySession[selectedSessionId] || []).filter((r) => r.include_in_session_average !== false);
+    return rows
+      .map((r) => {
+        const player = playerMap[r.player_id];
+        return { ...r, position: player?.position || "", player_name: r.player_name || player?.full_name || "" };
+      })
+      .filter((r) => !isGoalkeeper(playerMap[r.player_id]));
+  }, [gpsBySession, selectedSessionId, playerMap]);
+
+  const sessionSummary = useMemo(() => ({
+    playersCount: sessionRows.length,
+    avgDistance: avg(sessionRows.map((r) => r.total_distance)),
+    avgMMin: avg(sessionRows.map((r) => r.m_min)),
+    avgPlayerLoad: avg(sessionRows.map((r) => r.player_load)),
+    avgSprints: avg(sessionRows.map((r) => r.sprints)),
+  }), [sessionRows]);
+
+  const highlights = useMemo(() => {
+    function top(key) {
+      const withVal = sessionRows.filter((r) => r[key] != null);
+      if (!withVal.length) return null;
+      const best = withVal.reduce((a, b) => (b[key] > a[key] ? b : a));
+      return { name: best.player_name, value: best[key] };
+    }
+    return {
+      maxDistance: top("total_distance"),
+      maxSprints: top("sprints"),
+      maxPlayerLoad: top("player_load"),
+      maxSmax: top("smax"),
+      maxRhie: top("rhie_bouts"),
+    };
+  }, [sessionRows]);
+
+  const alertCounts = useMemo(() => {
+    const counts = { muyAlta: 0, alta: 0, optima: 0 };
+    sessionRows.forEach((r) => {
+      const comp = competitionMap[r.player_id];
+      if (!comp?.avg_total_distance) return;
+      const pct = (r.total_distance / comp.avg_total_distance) * 100;
+      if (pct >= 110) counts.muyAlta++;
+      else if (pct >= 95) counts.alta++;
+      else counts.optima++;
+    });
+    return counts;
+  }, [sessionRows, competitionMap]);
+
+  useEffect(() => {
+    const sourceRows = sessionRows.length ? sessionRows : allEnrichedRows;
+    if (sourceRows.length && !sourceRows.some((r) => r.player_id === selectedPlayerId)) {
+      setSelectedPlayerId(sourceRows[0].player_id);
+    }
+  }, [sessionRows, allEnrichedRows, selectedPlayerId]);
+
+  if (loading) return (
+    <div className="space-y-5">
+      <div className="h-20 rounded-2xl border border-zinc-800 bg-zinc-900/70 animate-pulse" />
+      <div className="flex gap-3 overflow-hidden">
+        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-44 min-w-[150px] rounded-xl border border-zinc-800 bg-zinc-900/70 animate-pulse" />)}
+      </div>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <div className="h-72 rounded-2xl border border-zinc-800 bg-zinc-900/70 animate-pulse xl:col-span-2" />
+        <div className="h-72 rounded-2xl border border-zinc-800 bg-zinc-900/70 animate-pulse" />
+      </div>
+    </div>
+  );
+
+  const tabs = [
+    { id: "session-load", label: "Carga de sesión" },
+    { id: "individual-player", label: "Individual de sesiones" },
+    { id: "individual-match", label: "Individual de partidos" },
+    { id: "kinesiology", label: "Retorno al equipo" },
+  ];
+
+  return (
+    <div className="space-y-5" ref={dashboardRef}>
+      <GpsDashboardHeader
+        squads={squads}
+        selectedSquadId={selectedSquadId}
+        onSquadChange={(id) => {
+          setAutoSelectedSquadName("");
+          setSelectedSquadId(id);
+          setSessionFilters((prev) => ({ ...prev, squadId: id, playerIds: [] }));
+          const squad = squads.find((s) => s.id === id);
+          if (squad) setSelectedSeason(squad.season || "");
+        }}
+        seasons={seasons}
+        selectedSeason={selectedSeason}
+        onSeasonChange={setSelectedSeason}
+        wideMode={wideMode}
+        onWideModeChange={handleWideModeChange}
+      />
+
+      {autoSelectedSquadName && (
+        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+          Mostramos <strong>{autoSelectedSquadName}</strong> porque es el plantel que contiene las sesiones y mediciones GPS disponibles. Podés cambiarlo desde el selector superior.
+        </div>
+      )}
+
+      {showImportModal && <ImportHistoricalGPSModal onClose={() => { setShowImportModal(false); load(); }} />}
+
+      <div className="flex overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-950/70 p-2 shadow-[0_16px_42px_rgba(0,0,0,0.22)]">
+        {tabs.map((tab, index) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`relative px-5 py-2.5 text-sm font-semibold transition-colors ${activeTab === tab.id ? "rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-950/30" : "text-zinc-400 hover:text-white"} ${index > 0 ? "before:absolute before:left-0 before:top-1/2 before:h-5 before:w-px before:-translate-y-1/2 before:bg-zinc-800" : ""}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "session-load" && (
+        <GpsSessionLoadPanel sessions={sessions} gpsBySession={gpsBySession} matchGpsByMatch={matchGpsByMatch} playerMap={playerMap} squadName={selectedSquad?.name} season={selectedSeason} squadId={selectedSquadId} competitionProfiles={competitionProfiles} microcycleProfiles={microcycleProfiles} matchReports={matchReports} onReload={load} />
+      )}
+
+      {activeTab === "kinesiology" && (
+        <GpsKinesiologyLoadTab key={selectedSquadId + ":" + selectedSeason} squadId={selectedSquadId} seasonId={selectedSeason} sessions={sessions} gpsBySession={gpsBySession} playerMap={playerMap} competitionProfiles={competitionProfiles} medicalEpisodes={medicalEpisodes} medicalStatuses={medicalStatuses} />
+      )}
+
+      {activeTab === "individual-player" && (
+        <GpsIndividualPlayerTab
+          key={selectedSquadId + ":" + selectedSeason}
+          squadId={selectedSquadId}
+          seasonId={selectedSeason}
+          matchReports={matchReports}
+          matchGpsByMatch={matchGpsByMatch}
+          players={rosterPlayers}
+          gpsBySession={gpsBySession}
+          sessions={sessions}
+          playerMap={playerMap}
+          competitionProfiles={competitionProfiles}
+        />
+      )}
+
+      {activeTab === "individual-match" && (
+        <GpsIndividualMatchTab players={rosterPlayers} matchReports={matchReports} matchGpsByMatch={matchGpsByMatch} competitionProfiles={competitionProfiles} squadId={selectedSquadId} squadName={selectedSquad?.name} seasonId={selectedSeason || selectedSquad?.season || ""} />
+      )}
+
+
+    </div>
+  );
+}

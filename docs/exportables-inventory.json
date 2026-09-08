@@ -1,0 +1,434 @@
+[
+  {
+    "file": "src/reports/components/ReportPrimitives.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF React"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/reports/builder/SessionReportBuilderModal.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF React",
+      "Canvas/imagen"
+    ],
+    "permission_reference": true,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/reports/charts/ReportBarChart.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF React"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/reports/session/SessionReportDocument.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF React"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/playerPhotoPng.js",
+    "reachable_from_main": true,
+    "engines": [
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/exports/fileExport.js",
+    "reachable_from_main": true,
+    "engines": [
+      "CSV"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/exports/pdfExportKit.js",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/reports/minutesPdf.js",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/reports/sessionPdf.js",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/reports/nutritionPdf.js",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/reports/chartToPng.js",
+    "reachable_from_main": false,
+    "engines": [
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/reports/matchReportExcel.js",
+    "reachable_from_main": true,
+    "engines": [
+      "Excel"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/reports/matchReportPdf.js",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/reports/sessionGpsPdf.js",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/lib/reports/formationPdf.js",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/pages/ExercisesLibrary.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/pages/MonthlyReport.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/pages/MicrocycleHistory.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": true,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/schedule/professionalSchedulePdf.js",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/schedule/ScheduleExportModal.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "Captura HTML",
+      "Canvas/imagen"
+    ],
+    "permission_reference": true,
+    "capture_mentions": 5
+  },
+  {
+    "file": "src/components/schedule/monthSchedulePdf.js",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/schedule/ScheduleExportView.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "Impresión navegador"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/schedule/dailySchedulePdf.js",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/tactical/UtileriaPanel.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/tactical/editor/TacticalStage.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/tactical/lib/tacticalExport.js",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/tactical/lib/tacticalReport.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/performance/dashboard/GpsIndividualPlayerReport.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "Impresión navegador"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/performance/dashboard/GpsExportButtons.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF",
+      "Captura HTML",
+      "Canvas/imagen",
+      "Excel"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 3
+  },
+  {
+    "file": "src/components/performance/dashboard/gpsMicrocyclePdfRenderer.js",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/performance/dashboard/GpsTeamModelPdfButton.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/performance/dashboard/GpsSessionsAdvancedTable.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "Excel"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/nutrition/SkinfoldTab.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "Excel"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/nutrition/NutritionDashboard.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "Excel"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/nutrition/ReadingTab.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "Excel"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/staff/PlayerImportDialog.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "Excel"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/staff/FieldSessionDetail.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/matches/matchGpsPDF.js",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/matches/tabs/FormacionTab.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF",
+      "Captura HTML",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 4
+  },
+  {
+    "file": "src/components/matches/tabs/ConvocadosTab.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF",
+      "Captura HTML",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 4
+  },
+  {
+    "file": "src/components/matches/tabs/LogisticaTab.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/planning/WeeklyPlannerBoard.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "Impresión navegador"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/sessions/SessionPDFExport.jsx",
+    "reachable_from_main": false,
+    "engines": [
+      "Impresión navegador"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/sessions/SessionDayMap.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/sessions/strength/StrengthPDFExport.jsx",
+    "reachable_from_main": true,
+    "engines": [
+      "PDF jsPDF"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  },
+  {
+    "file": "src/components/sessions/gpsReport/SessionGPSReportPDF.js",
+    "reachable_from_main": false,
+    "engines": [
+      "PDF jsPDF",
+      "Canvas/imagen"
+    ],
+    "permission_reference": false,
+    "capture_mentions": 0
+  }
+]

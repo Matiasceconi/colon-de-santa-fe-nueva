@@ -1,0 +1,129 @@
+{
+  "name": "MatchPlayerStats",
+  "type": "object",
+  "properties": {
+    "match_id": {
+      "type": "string"
+    },
+    "squad_id": {
+      "type": "string"
+    },
+    "season_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "stats_key": {
+      "type": "string",
+      "description": "Clave can\u00f3nica match_id:player_id"
+    },
+    "minutes": {
+      "type": "number"
+    },
+    "goals": {
+      "type": "number"
+    },
+    "assists": {
+      "type": "number"
+    },
+    "shots": {
+      "type": "number"
+    },
+    "shots_on_target": {
+      "type": "number"
+    },
+    "passes": {
+      "type": "number"
+    },
+    "accurate_passes": {
+      "type": "number"
+    },
+    "key_passes": {
+      "type": "number"
+    },
+    "tackles": {
+      "type": "number"
+    },
+    "interceptions": {
+      "type": "number"
+    },
+    "recoveries": {
+      "type": "number"
+    },
+    "duels": {
+      "type": "number"
+    },
+    "duels_won": {
+      "type": "number"
+    },
+    "aerial_duels": {
+      "type": "number"
+    },
+    "aerial_duels_won": {
+      "type": "number"
+    },
+    "fouls_committed": {
+      "type": "number"
+    },
+    "fouls_won": {
+      "type": "number"
+    },
+    "yellow_cards": {
+      "type": "number"
+    },
+    "red_cards": {
+      "type": "number"
+    },
+    "xg": {
+      "type": "number"
+    },
+    "xa": {
+      "type": "number"
+    },
+    "advanced_metrics": {
+      "type": "object",
+      "default": {},
+      "description": "M\u00e9tricas adicionales opcionales del proveedor"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "integration"
+      ],
+      "default": "integration"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "external_match_id": {
+      "type": "string"
+    },
+    "external_player_id": {
+      "type": "string"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "needs_review"
+      ],
+      "default": "needs_review"
+    },
+    "imported_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "match_id",
+    "player_id",
+    "stats_key"
+  ]
+}

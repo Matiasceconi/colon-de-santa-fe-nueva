@@ -1,0 +1,237 @@
+{
+  "name": "TrainingSession",
+  "type": "object",
+  "properties": {
+    "session_number": {
+      "type": "number",
+      "description": "N\u00famero correlativo visible de la sesi\u00f3n dentro del plantel/temporada"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo de la sesi\u00f3n"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de la sesi\u00f3n"
+    },
+    "squad_id": {
+      "type": "string",
+      "description": "ID del plantel"
+    },
+    "squad_name": {
+      "type": "string",
+      "description": "Nombre del plantel (desnormalizado)"
+    },
+    "season_id": {
+      "type": "string",
+      "description": "Temporada del plantel"
+    },
+    "weekly_plan_id": {
+      "type": "string",
+      "description": "ID del WeeklyPlan al que est\u00e1 vinculada la sesi\u00f3n"
+    },
+    "weekly_plan_day_id": {
+      "type": "string",
+      "description": "ID real del registro WeeklyPlanDay vinculado. No debe guardar IDs legados tipo day-1"
+    },
+    "legacy_weekly_plan_day_id": {
+      "type": "string",
+      "description": "ID legado del d\u00eda dentro de days_data conservado solo para auditor\u00eda"
+    },
+    "plan_sync_updated_at": {
+      "type": "string",
+      "description": "Fecha/hora de \u00faltima sincronizaci\u00f3n con Plan semanal"
+    },
+    "period": {
+      "type": "string",
+      "enum": [
+        "Pretemporada",
+        "Competencia",
+        "Transici\u00f3n"
+      ],
+      "default": "Competencia",
+      "description": "Per\u00edodo de planificaci\u00f3n de la sesi\u00f3n"
+    },
+    "match_day_code": {
+      "type": "string",
+      "description": "C\u00f3digo del d\u00eda del microciclo heredado del Plan Semanal, editable como excepci\u00f3n"
+    },
+    "md_manual_override": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si true, el MD fue modificado manualmente en la sesi\u00f3n y no se pisa desde el motor de planificaci\u00f3n"
+    },
+    "microcycle_day": {
+      "type": "string",
+      "description": "D\u00eda usado para perfiles GPS de microciclo, sincronizado con match_day_code"
+    },
+    "session_objective": {
+      "type": "string",
+      "description": "Objetivo f\u00edsico oficial de la sesi\u00f3n. El Plan semanal no debe sobrescribirlo"
+    },
+    "physical_objective_manual_override": {
+      "type": "boolean",
+      "default": false,
+      "description": "Compatibilidad hist\u00f3rica. Dejar de utilizarlo como consecuencia de una edici\u00f3n en el Plan"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "description": "Duraci\u00f3n en minutos"
+    },
+    "location": {
+      "type": "string",
+      "description": "Lugar del entrenamiento"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Hora de inicio de la sesi\u00f3n (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Hora de fin de la sesi\u00f3n (HH:MM)"
+    },
+    "session_type": {
+      "type": "string",
+      "description": "Tipo de sesi\u00f3n: Campo, Gimnasio, Compensatorio, Video, Activaci\u00f3n, etc."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "planned",
+        "completed",
+        "cancelled"
+      ],
+      "default": "planned",
+      "description": "Estado operativo de la sesi\u00f3n"
+    },
+    "md_source": {
+      "type": "string",
+      "enum": [
+        "calculated",
+        "manual_override",
+        "no_reference_match"
+      ],
+      "description": "Origen del MD de la sesi\u00f3n: calculado desde el partido objetivo, excepci\u00f3n manual o sin partido de referencia"
+    },
+    "md_reference_match_id": {
+      "type": "string",
+      "description": "ID del MatchReport usado como referencia para calcular el MD"
+    },
+    "md_calculated_at": {
+      "type": "string",
+      "description": "Fecha/hora del \u00faltimo c\u00e1lculo autom\u00e1tico del MD"
+    },
+    "md_override_reason": {
+      "type": "string",
+      "description": "Motivo obligatorio cuando el MD se edita manualmente como excepci\u00f3n"
+    },
+    "planning_review_status": {
+      "type": "string",
+      "description": "Estado de revisi\u00f3n de planificaci\u00f3n: pending, reviewed, conflict"
+    },
+    "planning_review_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Motivos por los que la sesi\u00f3n requiere revisi\u00f3n de planificaci\u00f3n"
+    },
+    "intensity_goal": {
+      "type": "string",
+      "enum": [
+        "Baja",
+        "Media",
+        "Alta"
+      ],
+      "description": "Intensidad objetivo (legado)"
+    },
+    "players_available": {
+      "type": "number",
+      "description": "Jugadores disponibles"
+    },
+    "players_selected": {
+      "type": "number",
+      "description": "Jugadores seleccionados"
+    },
+    "players_absent": {
+      "type": "number",
+      "description": "Jugadores ausentes"
+    },
+    "players_differentiated": {
+      "type": "number",
+      "description": "Jugadores diferenciados"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "URL del video general de la sesi\u00f3n"
+    },
+    "csv_url": {
+      "type": "string",
+      "description": "URL del CSV GPS de la sesi\u00f3n"
+    },
+    "csv_label": {
+      "type": "string",
+      "description": "Nombre del archivo CSV GPS"
+    },
+    "pdf_exported": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si la sesi\u00f3n fue exportada al menos una vez"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Usuario que cre\u00f3 la sesi\u00f3n"
+    },
+    "strength_microcycle": {
+      "type": "string",
+      "description": "Microciclo (m\u00f3dulo fuerza)"
+    },
+    "strength_session_number": {
+      "type": "string",
+      "description": "N\u00famero de sesi\u00f3n de fuerza"
+    },
+    "strength_purpose": {
+      "type": "string",
+      "description": "Prop\u00f3sito mec\u00e1nico de la sesi\u00f3n de fuerza"
+    },
+    "strength_session_type": {
+      "type": "string",
+      "description": "Tipo de sesi\u00f3n de fuerza"
+    },
+    "strength_vector_pattern": {
+      "type": "string",
+      "description": "Patr\u00f3n vectorial de la sesi\u00f3n de fuerza"
+    },
+    "import_source": {
+      "type": "string",
+      "enum": [
+        "excel_historico"
+      ],
+      "description": "Origen de importaci\u00f3n masiva"
+    },
+    "gps_report_observations": {
+      "type": "string",
+      "description": "Observaciones editables del Informe de Sesi\u00f3n GPS"
+    },
+    "rpe_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si la solicitud de RPE est\u00e1 habilitada para los jugadores de la sesi\u00f3n"
+    },
+    "rpe_available_at": {
+      "type": "string",
+      "description": "Fecha/hora desde la que los jugadores pueden responder el RPE"
+    },
+    "rpe_deadline": {
+      "type": "string",
+      "description": "Fecha/hora l\u00edmite para responder el RPE"
+    }
+  },
+  "required": [
+    "title",
+    "date"
+  ]
+}

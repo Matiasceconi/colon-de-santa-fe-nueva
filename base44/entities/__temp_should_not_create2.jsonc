@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "noop": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "__temp_should_not_create2"
+}

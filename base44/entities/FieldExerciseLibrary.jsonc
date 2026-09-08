@@ -1,0 +1,224 @@
+{
+  "name": "FieldExerciseLibrary",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre del ejercicio"
+    },
+    "normalized_name": {
+      "type": "string",
+      "description": "Nombre normalizado para detectar duplicados"
+    },
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel propietario del ejercicio"
+    },
+    "squad_name": {
+      "type": "string",
+      "description": "Nombre del plantel (desnormalizado)"
+    },
+    "global": {
+      "type": "boolean",
+      "default": false,
+      "description": "Compatibilidad hist\u00f3rica; las bibliotecas se a\u00edslan por plantel"
+    },
+    "type": {
+      "type": "string",
+      "description": "Tipo configurable del ejercicio"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Posesi\u00f3n",
+        "Pressing",
+        "Finalizaci\u00f3n",
+        "Transici\u00f3n",
+        "F\u00edsico",
+        "T\u00e1ctica",
+        "Rondo",
+        "Pelota parada",
+        "Otro"
+      ],
+      "description": "Categor\u00eda del ejercicio"
+    },
+    "format_label": {
+      "type": "string",
+      "description": "Formato organizativo habitual de la tarea, ej. 5v5 + 2 ARQ o 6v6 + 3C"
+    },
+    "objective": {
+      "type": "string",
+      "description": "Objetivo t\u00e1ctico/f\u00edsico"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n del ejercicio"
+    },
+    "length_m": {
+      "type": "number",
+      "description": "Largo habitual del espacio en metros"
+    },
+    "width_m": {
+      "type": "number",
+      "description": "Ancho habitual del espacio en metros"
+    },
+    "total_area": {
+      "type": "number",
+      "description": "Superficie total habitual (m\u00b2)"
+    },
+    "eii": {
+      "type": "number",
+      "description": "EII habitual (m\u00b2/jug)"
+    },
+    "players_count": {
+      "type": "number",
+      "description": "N\u00famero total habitual de participantes"
+    },
+    "eii_players_count": {
+      "type": "number",
+      "description": "N\u00famero habitual de jugadores considerados en el denominador del EII"
+    },
+    "aspect_ratio": {
+      "type": "number",
+      "description": "Relaci\u00f3n habitual largo/ancho"
+    },
+    "duration_min": {
+      "type": "number",
+      "description": "Duraci\u00f3n habitual en minutos"
+    },
+    "blocks": {
+      "type": "number",
+      "description": "Cantidad habitual de bloques"
+    },
+    "work_time": {
+      "type": "string",
+      "description": "Tiempo habitual de trabajo"
+    },
+    "rest_time": {
+      "type": "string",
+      "description": "Pausa habitual entre bloques"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de imagen del ejercicio"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "URL de video del ejercicio"
+    },
+    "external_load_summary": {
+      "type": "object",
+      "description": "Resumen hist\u00f3rico calculado de carga externa del ejercicio"
+    },
+    "historical_gps_summary": {
+      "type": "object",
+      "description": "Promedios y m\u00e1ximos hist\u00f3ricos de GPS vinculados a biblioteca"
+    },
+    "last_gps_sync_at": {
+      "type": "string",
+      "description": "\u00daltima sincronizaci\u00f3n de carga externa hist\u00f3rica"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observaciones"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Etiquetas"
+    },
+    "favorite": {
+      "type": "boolean",
+      "default": false,
+      "description": "Marcado como favorito"
+    },
+    "author": {
+      "type": "string",
+      "description": "Autor del ejercicio"
+    },
+    "times_used": {
+      "type": "number",
+      "default": 1,
+      "description": "Veces utilizado en sesiones"
+    },
+    "last_used_at": {
+      "type": "string",
+      "format": "date",
+      "description": "\u00daltima fecha de uso"
+    },
+    "first_created_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de creaci\u00f3n original"
+    },
+    "created_from_session_id": {
+      "type": "string",
+      "description": "ID de la sesi\u00f3n donde se cre\u00f3 por primera vez"
+    }
+  },
+  "required": [
+    "name",
+    "squad_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.squad_id": {
+            "$in": "{{user.data.squad_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "data.squad_id": {
+            "$in": "{{user.data.squad_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.squad_id": {
+            "$in": "{{user.data.squad_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.squad_id": {
+            "$in": "{{user.data.squad_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

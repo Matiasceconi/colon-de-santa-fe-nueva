@@ -1,0 +1,185 @@
+{
+  "name": "StrengthExerciseLibrary",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre del ejercicio"
+    },
+    "normalized_name": {
+      "type": "string",
+      "description": "Nombre normalizado para detectar duplicados"
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Nombres alternativos detectados para el mismo ejercicio"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categor\u00eda del ejercicio (ej: Tren inferior, Tren superior, Core)"
+    },
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel propietario (vac\u00edo si global=true)"
+    },
+    "squad_name": {
+      "type": "string",
+      "description": "Nombre del plantel (desnormalizado)"
+    },
+    "global": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si true, visible desde cualquier plantel"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si false, el ejercicio queda archivado en la biblioteca sin romper sesiones hist\u00f3ricas"
+    },
+    "method": {
+      "type": "string",
+      "enum": [
+        "Din\u00e1micos",
+        "Bal\u00edsticos",
+        "Biseries",
+        "Triseries",
+        "Contrastes",
+        "Complejos",
+        "Isom\u00e9tricos",
+        "Exc\u00e9ntricos",
+        "Preventivos",
+        "Otro"
+      ],
+      "description": "Clasificaci\u00f3n metodol\u00f3gica hist\u00f3rica/orientativa; la prescripci\u00f3n real pertenece a la sesi\u00f3n o plantilla"
+    },
+    "exercise_type": {
+      "type": "string",
+      "enum": [
+        "Esfuerzos repetidos",
+        "Esfuerzos din\u00e1micos",
+        "Antagonistas",
+        "Pliom\u00e9trico HI",
+        "S/CEA Estato/Din\u00e1mico",
+        "Potencia",
+        "Fuerza m\u00e1xima",
+        "Hipertrofia",
+        "Preventivo",
+        "Pliom\u00e9trico",
+        "Movilidad",
+        "Otro"
+      ],
+      "description": "Tipo de ejercicio/trabajo"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n estable del ejercicio"
+    },
+    "volume": {
+      "type": "string",
+      "description": "Prescripci\u00f3n sugerida hist\u00f3rica (legado; no se actualiza autom\u00e1ticamente desde sesiones)"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de imagen"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "URL de video"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "description": "Miniatura generada autom\u00e1ticamente desde el video"
+    },
+    "restore_exercise": {
+      "type": "string",
+      "description": "Campo legado de ejercicio restaura"
+    },
+    "compensate_exercise": {
+      "type": "string",
+      "description": "Campo legado de ejercicio compensa"
+    },
+    "sets": {
+      "type": "string",
+      "description": "Series sugeridas hist\u00f3ricas (legado; la prescripci\u00f3n real usa series en StrengthStation)"
+    },
+    "reps": {
+      "type": "string",
+      "description": "Repeticiones sugeridas hist\u00f3ricas (legado)"
+    },
+    "time": {
+      "type": "string",
+      "description": "Tiempo sugerido hist\u00f3rico (legado)"
+    },
+    "rest_time": {
+      "type": "string",
+      "description": "Pausa sugerida hist\u00f3rica (legado)"
+    },
+    "rir": {
+      "type": "string",
+      "description": "RIR sugerido hist\u00f3rico (legado)"
+    },
+    "objective": {
+      "type": "string",
+      "description": "Objetivo general del ejercicio"
+    },
+    "muscle_group": {
+      "type": "string",
+      "description": "Grupo muscular"
+    },
+    "vector_pattern": {
+      "type": "string",
+      "description": "Patr\u00f3n/vector de movimiento"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Indicaciones t\u00e9cnicas estables del ejercicio"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Etiquetas"
+    },
+    "favorite": {
+      "type": "boolean",
+      "default": false,
+      "description": "Favorito"
+    },
+    "times_used": {
+      "type": "number",
+      "default": 1,
+      "description": "Veces utilizado"
+    },
+    "usage_sessions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": [],
+      "description": "Sesiones donde apareci\u00f3 el ejercicio"
+    },
+    "last_used_at": {
+      "type": "string",
+      "format": "date",
+      "description": "\u00daltima fecha de uso"
+    },
+    "first_created_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de creaci\u00f3n"
+    },
+    "created_from_session_id": {
+      "type": "string",
+      "description": "Sesi\u00f3n origen"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

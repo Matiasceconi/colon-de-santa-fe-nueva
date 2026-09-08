@@ -1,0 +1,67 @@
+{
+  "name": "MigrationRecord",
+  "type": "object",
+  "properties": {
+    "migration_run_id": {
+      "type": "string"
+    },
+    "entity_name": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "sequence": {
+      "type": "number"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "staged",
+        "created",
+        "patched",
+        "error"
+      ],
+      "default": "staged"
+    },
+    "target_id": {
+      "type": "string"
+    },
+    "error": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "migration_run_id",
+    "entity_name",
+    "source_id",
+    "sequence",
+    "payload",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

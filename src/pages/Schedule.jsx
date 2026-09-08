@@ -1,0 +1,1028 @@
+import React, { useState, useEffect, useMemo } from "react";
+import { base44 } from "@/api/base44Client";
+import { ChevronLeft, ChevronRight, Plus, X, Pencil, Trash2, Download, Settings2, Copy, ArrowUp, ArrowDown, Sparkles, MoreVertical, Link2, CheckCircle2, CalendarDays, ExternalLink, Trophy, Dumbbell } from "lucide-react";
+import moment from "moment";
+import "moment/locale/es";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+import { useDemo } from "@/lib/DemoContext";
+import DemoSchedule from "@/components/demo/DemoSchedule";
+import AiScheduleImportModal from "@/components/schedule/AiScheduleImportModal";
+import ScheduleExportModal from "@/components/schedule/ScheduleExportModal";
+import { getLogoForRival } from "@/lib/match-utils";
+import RivalClubPicker from "@/components/clubs/RivalClubPicker";
+import { isMatchEvent, matchPayloadFromEvent } from "@/lib/matchCalendarSync";
+import { invokeRebuildPlanning } from "@/components/planning/microcycleSync";
+import { useNavigate } from "react-router-dom";
+import { buildCalendarAudit, effectiveEventType, eventStartTime, normalizeCalendarText } from "@/components/schedule/calendarAudit";
+import { buildCalendarView, eventSourceLabel } from "@/components/schedule/calendarSourceAdapter";
+import CalendarQualityPanel from "@/components/schedule/CalendarQualityPanel";
+import CalendarEventDrawer from "@/components/schedule/CalendarEventDrawer";
+import CalendarSourcesPanel from "@/components/schedule/CalendarSourcesPanel";
+import { EVENT_TYPES } from "@/components/schedule/scheduleImportUtils";
+import PageTour from "@/components/tour/PageTour";
+import { CALENDAR_TOUR } from "@/lib/pageTours";
+import DailyScheduleWidget from "@/components/schedule/DailyScheduleWidget";
+
+moment.locale("es");
+
+const COLOR_MAP = {
+  blue:   { bg: "bg-blue-500/20",   border: "border-blue-500/40",   text: "text-blue-300",   dot: "bg-blue-400",   hex: "#3b82f6" },
+  green:  { bg: "bg-emerald-500/20", border: "border-emerald-500/40", text: "text-emerald-300", dot: "bg-emerald-400", hex: "#22c55e" },
+  yellow: { bg: "bg-yellow-500/20", border: "border-yellow-500/40", text: "text-yellow-300", dot: "bg-yellow-400", hex: "#eab308" },
+  orange: { bg: "bg-orange-500/20", border: "border-orange-500/40", text: "text-orange-300", dot: "bg-orange-400", hex: "#f97316" },
+  red:    { bg: "bg-red-500/20",    border: "border-red-500/40",    text: "text-red-300",    dot: "bg-red-400",    hex: "#ef4444" },
+  purple: { bg: "bg-violet-500/20", border: "border-violet-500/40", text: "text-violet-300", dot: "bg-violet-400", hex: "#8b5cf6" },
+  pink:   { bg: "bg-pink-500/20",   border: "border-pink-500/40",   text: "text-pink-300",   dot: "bg-pink-400",   hex: "#ec4899" },
+  cyan:   { bg: "bg-cyan-500/20",   border: "border-cyan-500/40",   text: "text-cyan-300",   dot: "bg-cyan-400",   hex: "#06b6d4" },
+};
+
+const COLORS = ["blue","green","yellow","orange","red","purple","pink","cyan"];
+const COLOR_LABELS = { blue:"Azul", green:"Verde", yellow:"Amarillo", orange:"Naranja", red:"Rojo", purple:"Violeta", pink:"Rosa", cyan:"Celeste" };
+
+const EMPTY_FORM = { date: "", time: "", start_time: "", end_time: "", title: "", type: "", event_type: "", duration_minutes: "", location: "", notes: "", color: "blue", rival: "", rival_club_id: "", home_away: "", rival_logo_url: "", competition: "", competition_id: "", competition_stage: "", competition_round: "", matchday_number: "", phase_label: "", match_id: "" };
+
+const DAY_NAMES_FULL = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+// 0=Dom,1=Lun,...,6=Sáb
+const START_DAY_OPTIONS = [
+  { value: 1, label: "Lunes" },
+  { value: 2, label: "Martes" },
+  { value: 3, label: "Miércoles" },
+  { value: 4, label: "Jueves" },
+  { value: 5, label: "Viernes" },
+  { value: 6, label: "Sábado" },
+  { value: 0, label: "Domingo" },
+];
+
+const STORAGE_KEY = "schedule_custom_templates";
+const WEEK_START_KEY = "schedule_week_start_day";
+
+function loadCustomTemplates() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
+}
+function saveCustomTemplates(templates) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+}
+function loadWeekStartDay() {
+  try { return parseInt(localStorage.getItem(WEEK_START_KEY) || "1", 10); } catch { return 1; }
+}
+function saveWeekStartDay(day) {
+  localStorage.setItem(WEEK_START_KEY, String(day));
+}
+
+// Get the start of a custom week (isoWeek equivalent but with any start day)
+function getCustomWeekStart(refDate, startDay) {
+  const d = refDate.clone().startOf("day");
+  const currentDay = d.day(); // 0=Dom,...,6=Sáb
+  let diff = currentDay - startDay;
+  if (diff < 0) diff += 7;
+  return d.subtract(diff, "days");
+}
+
+const EMPTY_TEMPLATE = { title: "", time: "", duration_minutes: "", color: "blue", type: "" };
+
+// ── TemplateManagerModal ──
+function TemplateManagerModal({ open, onClose }) {
+  const [templates, setTemplates] = useState([]);
+  const [form, setForm] = useState(EMPTY_TEMPLATE);
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    if (open) { setTemplates(loadCustomTemplates()); setAdding(false); setForm(EMPTY_TEMPLATE); }
+  }, [open]);
+
+  if (!open) return null;
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  function handleAdd() {
+    if (!form.title) return;
+    const next = [...templates, { ...form, duration_minutes: form.duration_minutes ? Number(form.duration_minutes) : undefined }];
+    setTemplates(next);
+    saveCustomTemplates(next);
+    setForm(EMPTY_TEMPLATE);
+    setAdding(false);
+  }
+
+  function handleDelete(idx) {
+    const next = templates.filter((_, i) => i !== idx);
+    setTemplates(next);
+    saveCustomTemplates(next);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 w-full max-w-sm mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-semibold text-sm">Gestionar plantillas</h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white"><X size={16} /></button>
+        </div>
+        {templates.length === 0 && !adding && (
+          <p className="text-zinc-600 text-xs text-center py-4">No tenés plantillas personalizadas aún.</p>
+        )}
+        <div className="space-y-1.5 mb-3 max-h-48 overflow-y-auto">
+          {templates.map((t, idx) => {
+            const c = COLOR_MAP[t.color] || COLOR_MAP.blue;
+            return (
+              <div key={idx} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${c.bg} ${c.border}`}>
+                <div>
+                  <span className={`text-xs font-semibold ${c.text}`}>{t.title}</span>
+                  {t.time && <span className="text-xs text-zinc-500 ml-2">{t.time}</span>}
+                  {t.duration_minutes && <span className="text-xs text-zinc-600 ml-1">· {t.duration_minutes}min</span>}
+                </div>
+                <button onClick={() => handleDelete(idx)} className="p-1 rounded hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors">
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        {adding ? (
+          <div className="space-y-2 border-t border-zinc-800 pt-3">
+            <input className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500" placeholder="Título *" value={form.title} onChange={(e) => set("title", e.target.value)} />
+            <div className="grid grid-cols-2 gap-2">
+              <input className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500" placeholder="Tipo (ej: Comida)" value={form.type} onChange={(e) => set("type", e.target.value)} />
+              <input type="time" className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-zinc-500" value={form.time} onChange={(e) => set("time", e.target.value)} />
+              <input type="number" className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500" placeholder="Duración (min)" value={form.duration_minutes} onChange={(e) => set("duration_minutes", e.target.value)} />
+              <div className="flex gap-1.5 items-center">
+                {COLORS.map((c) => (
+                  <button key={c} onClick={() => set("color", c)} className={`w-5 h-5 rounded-full border-2 transition-all ${COLOR_MAP[c].dot} ${form.color === c ? "border-white scale-110" : "border-transparent opacity-50 hover:opacity-100"}`} />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={handleAdd} disabled={!form.title} className="flex-1 px-3 py-1.5 rounded-lg text-xs bg-white text-zinc-900 font-semibold hover:bg-zinc-200 disabled:opacity-40 transition-colors">Guardar</button>
+              <button onClick={() => setAdding(false)} className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">Cancelar</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setAdding(true)} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-zinc-700 text-xs text-zinc-500 hover:text-white hover:border-zinc-500 transition-colors">
+            <Plus size={12} /> Nueva plantilla
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── WeekSettingsModal ──
+function WeekSettingsModal({ open, onClose, startDay, onChangeStartDay }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 w-full max-w-xs mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-semibold text-sm">Configurar semana</h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white"><X size={16} /></button>
+        </div>
+        <p className="text-xs text-zinc-500 mb-3">Día de inicio de la semana</p>
+        <div className="grid grid-cols-2 gap-2">
+          {START_DAY_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { onChangeStartDay(opt.value); onClose(); }}
+              className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${startDay === opt.value ? "bg-white text-zinc-900 border-white" : "bg-zinc-800 text-zinc-300 border-zinc-700 hover:border-zinc-500"}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── EventCard ──
+function EventCard({ event, onOpen, onEdit, onDelete, onCopy, onMoveUp, onMoveDown }) {
+  const c = COLOR_MAP[event.color] || COLOR_MAP.blue;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const sourceLabel = eventSourceLabel(event);
+  const linkedSource = ["training_session", "match_report"].includes(event.source_kind);
+  const type = effectiveEventType(event);
+  const isMatch = type === "Partido";
+  const isSession = event.source_kind === "training_session";
+  const integrated = event.source_kind === "competition_integration";
+  const time = eventStartTime(event);
+  const sub = isMatch
+    ? [event.home_away, event.competition_round || event.phase_label || event.competition].filter(Boolean).join(" · ")
+    : isSession
+      ? [event.match_day_code, event.physical_objective || event.session_type].filter(Boolean).join(" · ")
+      : [type, event.location].filter(Boolean).join(" · ");
+
+  return (
+    <div className={`relative overflow-hidden rounded-xl border transition hover:-translate-y-px hover:brightness-110 ${isMatch ? "border-red-500/25 bg-gradient-to-br from-red-500/[0.10] to-zinc-950" : isSession ? "border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.08] to-zinc-950" : `${c.bg} ${c.border}`}`}>
+      <button type="button" onClick={() => onOpen(event)} className="flex w-full items-start gap-2.5 p-2.5 text-left">
+        <div className="mt-0.5 shrink-0">
+          {event.rival_logo_url ? <img src={event.rival_logo_url} alt="Escudo" className="h-7 w-7 object-contain" onError={(e) => { e.target.style.display = "none"; }} /> : isMatch ? <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/10 text-red-300"><Trophy size={14}/></div> : isSession ? <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-300"><Dumbbell size={14}/></div> : <div className={`mt-1 h-2.5 w-2.5 rounded-full ${c.dot}`} />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className={`min-w-0 truncate text-xs font-black ${isMatch ? "text-red-100" : isSession ? "text-emerald-100" : c.text}`}>{isMatch && event.rival ? `vs ${event.rival}` : event.title}</p>
+            {time && <span className="shrink-0 text-[10px] font-black text-white">{time}</span>}
+          </div>
+          {sub && <p className="mt-1 truncate text-[9px] font-medium text-zinc-500">{sub}</p>}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5"><span className={`rounded-full border px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wide ${integrated ? "border-blue-500/20 bg-blue-500/10 text-blue-300" : linkedSource ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-white/10 bg-black/20 text-zinc-500"}`}>{sourceLabel}</span>{event.duration_minutes && <span className="text-[8px] text-zinc-600">{event.duration_minutes} min</span>}</div>
+        </div>
+      </button>
+      <button onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }} className="absolute bottom-1.5 right-1.5 rounded-lg p-1 text-zinc-600 hover:bg-white/10 hover:text-white"><MoreVertical size={12}/></button>
+      {menuOpen && <><div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} /><div className="absolute right-1 top-8 z-20 min-w-[132px] rounded-lg border border-zinc-700 bg-zinc-800 py-1 shadow-xl">
+        <button onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onEdit(event); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white">{linkedSource ? <ExternalLink size={11}/> : <Pencil size={11}/>} {linkedSource ? `Abrir ${sourceLabel.toLowerCase()}` : "Editar"}</button>
+        {!event.is_virtual && !linkedSource && <><button onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onCopy(event); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white"><Copy size={11}/>Copiar</button><button onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onMoveUp(event); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white"><ArrowUp size={11}/>Mover antes</button><button onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onMoveDown(event); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white"><ArrowDown size={11}/>Mover después</button><div className="my-1 border-t border-zinc-700"/><button onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete(event.id); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/20"><Trash2 size={11}/>Eliminar</button></>}
+      </div></>}
+    </div>
+  );
+}
+
+// ── EventModal ──
+function EventModal({ open, onClose, onSave, initial, copyData, defaultDate, clubs, onClubCreated }) {
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
+  const [customTemplates, setCustomTemplates] = useState([]);
+
+  const DEFAULT_TEMPLATES = [
+    { title: "Desayuno", time: "08:00", duration_minutes: 45, color: "yellow", type: "Comida" },
+    { title: "Almuerzo", time: "13:00", duration_minutes: 60, color: "orange", type: "Comida" },
+    { title: "Cena", time: "20:00", duration_minutes: 60, color: "orange", type: "Comida" },
+    { title: "Charla técnica", time: "09:00", duration_minutes: 60, color: "blue", type: "Reunión" },
+    { title: "Viaje", time: "07:00", duration_minutes: 120, color: "purple", type: "Viaje" },
+    { title: "Gimnasio", time: "09:30", duration_minutes: 60, color: "purple", type: "Gimnasio" },
+    { title: "Control / evaluación", time: "09:00", duration_minutes: 30, color: "cyan", type: "Evaluación" },
+  ];
+
+  useEffect(() => {
+    if (open) {
+      if (initial) {
+        const normalizedType = effectiveEventType(initial);
+        setForm({ ...EMPTY_FORM, ...initial, type: normalizedType, event_type: normalizedType, time: eventStartTime(initial), start_time: eventStartTime(initial) });
+      } else if (copyData) {
+        setForm({ ...EMPTY_FORM, ...copyData, date: defaultDate || copyData.date || "" });
+      } else {
+        setForm({ ...EMPTY_FORM, date: defaultDate || "" });
+      }
+      setCustomTemplates(loadCustomTemplates());
+      setSaveError("");
+    }
+  }, [open, initial, copyData, defaultDate]);
+
+  const allTemplates = [...DEFAULT_TEMPLATES, ...customTemplates];
+  const selectableTypes = initial ? EVENT_TYPES : EVENT_TYPES.filter((type) => !["Entrenamiento", "Partido"].includes(type));
+  if (!open) return null;
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function handleSave() {
+    if (!form.title || !form.date) return;
+    setSaving(true);
+    setSaveError("");
+    try {
+      const matchEvent = (form.event_type || form.type) === "Partido" || form.type === "Jornada de Juveniles";
+      const autoLogo = matchEvent ? getLogoForRival(form.rival) : null;
+      const payload = { ...form, rival_logo_url: form.rival_logo_url || autoLogo || "", duration_minutes: form.duration_minutes ? Number(form.duration_minutes) : undefined, matchday_number: form.matchday_number ? Number(form.matchday_number) : undefined };
+      await onSave(payload);
+      onClose();
+    } catch (error) {
+      setSaveError(error?.message || "No se pudo guardar el evento.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-white font-semibold">{initial ? "Editar evento" : copyData ? "Copiar evento" : "Nuevo evento"}</h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white"><X size={18} /></button>
+        </div>
+        {!initial && <div className="mb-4 rounded-xl border border-blue-500/20 bg-blue-500/[0.06] px-3 py-2.5 text-[11px] leading-relaxed text-blue-100">Este formulario es para <strong>agenda operativa</strong>. Los entrenamientos completos se crean en <strong>Sesiones</strong> y los partidos en <strong>Partidos</strong>; el calendario los mostrará automáticamente.</div>}
+        {/* Quick templates */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-zinc-500">Plantillas rápidas</p>
+            <button type="button" onClick={() => setShowTemplateManager(true)} className="flex items-center gap-1 text-xs text-zinc-500 hover:text-white transition-colors px-2 py-0.5 rounded hover:bg-zinc-800">
+              <Plus size={11} /> Gestionar
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {allTemplates.map((t, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => { const templateType = EVENT_TYPES.includes(t.type) ? t.type : "Otro"; setForm((f) => ({ ...f, title: t.title, time: t.time || f.time, start_time: t.time || f.start_time, duration_minutes: t.duration_minutes || f.duration_minutes, color: t.color, type: templateType || f.type, event_type: templateType || f.event_type })); }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${COLOR_MAP[t.color].bg} ${COLOR_MAP[t.color].text} ${COLOR_MAP[t.color].border} hover:opacity-80`}
+              >
+                {t.title}
+              </button>
+            ))}
+          </div>
+        </div>
+        <TemplateManagerModal open={showTemplateManager} onClose={() => { setShowTemplateManager(false); setCustomTemplates(loadCustomTemplates()); }} />
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="text-xs text-zinc-400 mb-1 block">Título *</label>
+              <input className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500" placeholder="Ej: Desayuno, Viaje al estadio..." value={form.title} onChange={(e) => set("title", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 mb-1 block">Tipo de evento</label>
+              <select className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500" value={form.event_type || form.type || "Otro"} onChange={(e) => { set("type", e.target.value); set("event_type", e.target.value); }}>{selectableTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select>
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 mb-1 block">Fecha *</label>
+              <input type="date" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500" value={form.date} onChange={(e) => set("date", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 mb-1 block">Hora</label>
+              <input type="time" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500" value={form.start_time || form.time} onChange={(e) => { set("time", e.target.value); set("start_time", e.target.value); }} />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 mb-1 block">Hora fin</label>
+              <input type="time" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500" value={form.end_time || ""} onChange={(e) => set("end_time", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 mb-1 block">Duración (min)</label>
+              <input type="number" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500" placeholder="60" value={form.duration_minutes} onChange={(e) => set("duration_minutes", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 mb-1 block">Lugar</label>
+              <input className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500" placeholder="Ej: Hotel, Estadio..." value={form.location} onChange={(e) => set("location", e.target.value)} />
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs text-zinc-400 mb-1 block">Notas</label>
+              <textarea rows={2} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 resize-none" placeholder="Observaciones..." value={form.notes} onChange={(e) => set("notes", e.target.value)} />
+            </div>
+            {((form.event_type || form.type) === "Partido" || form.type === "Jornada de Juveniles") && (
+              <div className="col-span-2 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <RivalClubPicker clubs={clubs} selectedClubId={form.rival_club_id || ""} onCreated={onClubCreated} onSelect={(_, patch) => setForm((current) => ({ ...current, ...patch }))} />
+                  <div><label className="text-xs text-zinc-400 mb-1 block">Local/Visitante</label><select className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500" value={form.home_away || ""} onChange={(e) => set("home_away", e.target.value)}><option value="">—</option><option>Local</option><option>Visitante</option><option>Neutral</option></select></div>
+                </div>
+
+
+
+              </div>
+            )}
+            <div className="col-span-2">
+              <label className="text-xs text-zinc-400 mb-2 block">Color</label>
+              <div className="flex gap-2 flex-wrap">
+                {COLORS.map((c) => (
+                  <button key={c} title={COLOR_LABELS[c]} onClick={() => set("color", c)} className={`w-7 h-7 rounded-full border-2 transition-all ${COLOR_MAP[c].dot} ${form.color === c ? "border-white scale-110" : "border-transparent opacity-60 hover:opacity-100"}`} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        {saveError && <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs text-red-200">{saveError}</div>}
+        <div className="flex justify-end gap-2 mt-5">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">Cancelar</button>
+          <button onClick={handleSave} disabled={!form.title || !form.date || saving} className="px-4 py-2 rounded-lg text-sm bg-white text-zinc-900 font-semibold hover:bg-zinc-200 disabled:opacity-40 transition-colors">
+            {saving ? "Guardando..." : "Guardar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Schedule ──
+function OperationalSchedule() {
+  const navigate = useNavigate();
+  const { activeSquadId, activeSquad, activeSeasonId, isAdmin } = useWorkspace();
+  const [events, setEvents] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [normalizingCalendar, setNormalizingCalendar] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [weekStartDay, setWeekStartDay] = useState(loadWeekStartDay);
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => getCustomWeekStart(moment(), loadWeekStartDay()));
+  const [view, setView] = useState("week");
+  const [timelineDate, setTimelineDate] = useState(() => moment().format("YYYY-MM-DD"));
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [currentMonth, setCurrentMonth] = useState(moment().startOf("month"));
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [newMenuOpen, setNewMenuOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [defaultDate, setDefaultDate] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [copyData, setCopyData] = useState(null);
+  const [showAiImport, setShowAiImport] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [copyingEvent, setCopyingEvent] = useState(null); // event being copied
+  const [copyTargetDate, setCopyTargetDate] = useState(""); // target date for paste
+  const [rivalClubs, setRivalClubs] = useState([]);
+  const [integrationSettings, setIntegrationSettings] = useState(null);
+  const [integrationBusy, setIntegrationBusy] = useState(false);
+  const [integrationMessage, setIntegrationMessage] = useState("");
+
+  const activeCalendarLinked = Boolean(
+    integrationSettings?.calendar_sync_enabled &&
+    activeSquadId &&
+    (integrationSettings?.calendar_sync_squad_ids || []).includes(activeSquadId)
+  );
+
+  async function loadIntegrationSettings() {
+    const rows = await base44.entities.CompetitionIntegrationSettings.filter({ enabled: true }, "-updated_date", 10).catch(() => []);
+    const selected = rows?.[0] || null;
+    setIntegrationSettings(selected);
+    return selected;
+  }
+
+  async function syncIntegratedCalendar({ silent = false } = {}) {
+    if (!activeSquadId || !activeCalendarLinked) return;
+    setIntegrationBusy(true);
+    if (!silent) setIntegrationMessage("");
+    try {
+      const response = await base44.functions.invoke("syncCompetitionCalendar", { squad_id: activeSquadId, provider: integrationSettings?.provider || "" });
+      const result = response?.data || response || {};
+      if (!silent) setIntegrationMessage(`Calendario actualizado · ${result.created || 0} nuevos · ${result.updated || 0} revisados`);
+      await loadEvents();
+    } catch (error) {
+      setIntegrationMessage(error?.response?.data?.error || error?.message || "No se pudo sincronizar el calendario integrado.");
+    } finally {
+      setIntegrationBusy(false);
+    }
+  }
+
+  async function toggleIntegratedCalendar() {
+    if (!isAdmin || !integrationSettings?.id || !activeSquadId) return;
+    setIntegrationBusy(true);
+    setIntegrationMessage("");
+    try {
+      const currentIds = new Set(integrationSettings.calendar_sync_squad_ids || []);
+      if (currentIds.has(activeSquadId)) currentIds.delete(activeSquadId);
+      else currentIds.add(activeSquadId);
+      const nextIds = [...currentIds];
+      const nextEnabled = nextIds.length > 0;
+      await base44.entities.CompetitionIntegrationSettings.update(integrationSettings.id, {
+        calendar_sync_squad_ids: nextIds,
+        calendar_sync_enabled: nextEnabled,
+        updated_at: new Date().toISOString(),
+      });
+      const nextSettings = { ...integrationSettings, calendar_sync_squad_ids: nextIds, calendar_sync_enabled: nextEnabled };
+      setIntegrationSettings(nextSettings);
+      if (nextIds.includes(activeSquadId)) {
+        const response = await base44.functions.invoke("syncCompetitionCalendar", { squad_id: activeSquadId, provider: integrationSettings?.provider || "" });
+        const result = response?.data || response || {};
+        setIntegrationMessage(`Vinculación activa · ${result.created || 0} partidos agregados al calendario`);
+        await loadEvents();
+      } else {
+        setIntegrationMessage("Vinculación desactivada para este plantel. Los eventos ya creados se conservan.");
+      }
+    } catch (error) {
+      setIntegrationMessage(error?.response?.data?.error || error?.message || "No se pudo cambiar la vinculación.");
+    } finally {
+      setIntegrationBusy(false);
+    }
+  }
+
+  async function loadEvents() {
+    setLoading(true);
+    const [all, clubRows, matchRows, sessionRows] = await Promise.all([
+      base44.entities.DayEvent.list("-date", 1000),
+      base44.entities.RivalClub.list("official_name", 500).catch(() => []),
+      activeSquadId ? base44.entities.MatchReport.filter({ squad_id: activeSquadId }, "date", 1000).catch(() => []) : [],
+      activeSquadId ? base44.entities.TrainingSession.filter({ squad_id: activeSquadId }, "date", 1500).catch(() => []) : [],
+    ]);
+    const seasonMatches = (row) => !activeSeasonId || !row.season_id || String(row.season_id) === String(activeSeasonId);
+    const filtered = activeSquadId ? all.filter((e) => e.squad_id === activeSquadId && seasonMatches(e)) : all;
+    setEvents(filtered);
+    setMatches((matchRows || []).filter(seasonMatches));
+    setSessions((sessionRows || []).filter(seasonMatches));
+    setRivalClubs(clubRows);
+    setLoading(false);
+  }
+
+  const calendarView = useMemo(() => buildCalendarView({ dayEvents: events, sessions, matches }), [events, sessions, matches]);
+  const displayEvents = calendarView.events;
+  const calendarAudit = useMemo(() => buildCalendarAudit(events, matches, sessions), [events, matches, sessions]);
+
+  async function normalizeCalendar({ silent = false } = {}) {
+    if (!isAdmin || !activeSquadId || normalizingCalendar) return;
+    setNormalizingCalendar(true);
+    try {
+      const response = await base44.functions.invoke("normalizeCalendarData", { squad_id: activeSquadId, season_id: activeSeasonId || activeSquad?.season || "" });
+      const result = response?.data || response || {};
+      if (!silent) setIntegrationMessage(`Integridad revisada · ${result.normalized || 0} eventos normalizados · ${result.linkedSessions || 0} sesiones vinculadas · ${result.repairedLinks || 0} vínculos reparados`);
+      await loadEvents();
+    } catch (error) {
+      if (!silent) setIntegrationMessage(error?.response?.data?.error || error?.message || "No se pudo revisar la integridad del calendario.");
+    } finally {
+      setNormalizingCalendar(false);
+    }
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([loadEvents(), loadIntegrationSettings()]).catch(() => {});
+  }, [activeSquadId, activeSeasonId]);
+
+  useEffect(() => {
+    if (!isAdmin || !activeSquadId) return;
+    const key = `calendar-normalized:${activeSquadId}:${activeSeasonId || activeSquad?.season || ""}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    normalizeCalendar({ silent: true });
+  }, [isAdmin, activeSquadId, activeSeasonId]);
+
+  useEffect(() => {
+    if (!activeCalendarLinked || !activeSquadId) return;
+    syncIntegratedCalendar({ silent: true });
+  }, [activeSquadId, activeCalendarLinked]);
+
+  // Si se llega con ?date=YYYY-MM-DD (ej: desde el cronograma del Dashboard), abrir esa semana
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const dateParam = params.get("date");
+    if (dateParam && moment(dateParam, "YYYY-MM-DD", true).isValid()) {
+      setView("week");
+      setTimelineDate(dateParam);
+      setCurrentWeekStart(getCustomWeekStart(moment(dateParam), weekStartDay));
+    }
+     
+  }, []);
+
+  // Re-compute week start when weekStartDay changes
+  useEffect(() => {
+    setCurrentWeekStart(getCustomWeekStart(moment(), weekStartDay));
+  }, [weekStartDay]);
+
+  function handleChangeStartDay(day) {
+    saveWeekStartDay(day);
+    setWeekStartDay(day);
+  }
+
+  function getEventsForDate(dateStr) {
+    return displayEvents
+      .filter((e) => e.date === dateStr)
+      .filter((e) => typeFilter === "all" || effectiveEventType(e) === typeFilter)
+      .filter((e) => sourceFilter === "all" || e.source_kind === sourceFilter)
+      .sort((a, b) => eventStartTime(a).localeCompare(eventStartTime(b)));
+  }
+
+  async function handleSave(form) {
+    const eventType = form.event_type || form.type || "Otro";
+    const startTime = form.start_time || form.time || "";
+    const sameTitle = (event) => normalizeCalendarText(event.title || "") === normalizeCalendarText(form.title || "");
+    const sameBase = (event) => event.id !== editingEvent?.id && event.date === form.date && eventStartTime(event) === startTime && effectiveEventType(event) === eventType;
+    const duplicate = events.find((event) => sameBase(event) && sameTitle(event));
+    const duplicateMatch = eventType === "Partido" ? events.find((event) => event.id !== editingEvent?.id && event.date === form.date && effectiveEventType(event) === "Partido" && normalizeCalendarText(event.rival || event.title || "") === normalizeCalendarText(form.rival || form.title || "")) : null;
+    if (duplicate || duplicateMatch) throw new Error("Ya existe un evento equivalente en esa fecha. Revisalo antes de crear otro duplicado.");
+    const payload = { ...form, time: startTime, start_time: startTime, type: eventType, event_type: eventType, squad_id: activeSquadId, squad_name: activeSquad?.name || "", season_id: activeSeasonId || activeSquad?.season || "", matchday_number: form.matchday_number ? Number(form.matchday_number) : undefined, sync_source: "calendar", sync_updated_at: new Date().toISOString(), source_kind: "manual", data_quality_status: "ok", quality_notes: [] };
+    let savedEvent = null;
+    if (editingEvent) {
+      await base44.entities.DayEvent.update(editingEvent.id, payload);
+      savedEvent = { ...editingEvent, ...payload };
+    } else {
+      savedEvent = await base44.entities.DayEvent.create(payload);
+    }
+    if (isMatchEvent(savedEvent)) {
+      const matchPayload = matchPayloadFromEvent(savedEvent);
+      let linkedMatch = null;
+      if (savedEvent.match_id) {
+        await base44.entities.MatchReport.update(savedEvent.match_id, matchPayload).catch(() => null);
+        linkedMatch = { id: savedEvent.match_id, ...matchPayload };
+      } else {
+        const existing = await base44.entities.MatchReport.filter({ calendar_event_id: savedEvent.id }, "-date", 1).catch(() => []);
+        if (existing[0]) {
+          await base44.entities.MatchReport.update(existing[0].id, matchPayload);
+          linkedMatch = { ...existing[0], ...matchPayload };
+        } else {
+          linkedMatch = await base44.entities.MatchReport.create(matchPayload);
+        }
+      }
+      if (linkedMatch?.id) {
+        await base44.entities.DayEvent.update(savedEvent.id, { match_id: linkedMatch.id, source_kind: "match_report", canonical_key: `match:${linkedMatch.id}`, data_quality_status: "ok", quality_notes: [] });
+      }
+      invokeRebuildPlanning({ squadId: activeSquadId, seasonId: activeSeasonId, mode: "execute" }).catch(() => {});
+    }
+    await loadEvents();
+  }
+
+  async function handleDelete(id) {
+    try {
+      await base44.entities.DayEvent.delete(id);
+    } catch {
+      // Si el evento ya no existe, ignorar el error
+    }
+    await loadEvents();
+  }
+
+  function handleCopy(event) {
+    setCopyingEvent(event);
+    setCopyTargetDate(event.date);
+  }
+
+  async function handlePaste() {
+    if (!copyingEvent || !copyTargetDate) return;
+    const rest = { ...copyingEvent };
+    ["id", "created_date", "updated_date", "created_by_id", "canonical_key", "import_key", "match_id", "training_session_id", "sync_source", "sync_updated_at", "source_entity_id", "is_virtual"].forEach((key) => delete rest[key]);
+    await base44.entities.DayEvent.create({ ...rest, date: copyTargetDate, source_kind: "manual", data_quality_status: "ok", quality_notes: [], sync_source: "calendar", sync_updated_at: new Date().toISOString() });
+    setCopyingEvent(null);
+    setCopyTargetDate("");
+    await loadEvents();
+  }
+
+  async function handleMoveUp(event) {
+    if (!event.time) return;
+    const [h, m] = event.time.split(":").map(Number);
+    const totalMins = h * 60 + m - 30;
+    if (totalMins < 0) return;
+    const newTime = `${String(Math.floor(totalMins / 60)).padStart(2, "0")}:${String(totalMins % 60).padStart(2, "0")}`;
+    await base44.entities.DayEvent.update(event.id, { time: newTime, start_time: newTime, sync_source: "calendar", sync_updated_at: new Date().toISOString() });
+    await loadEvents();
+  }
+
+  async function handleMoveDown(event) {
+    if (!event.time) return;
+    const [h, m] = event.time.split(":").map(Number);
+    const totalMins = h * 60 + m + 30;
+    if (totalMins >= 24 * 60) return;
+    const newTime = `${String(Math.floor(totalMins / 60)).padStart(2, "0")}:${String(totalMins % 60).padStart(2, "0")}`;
+    await base44.entities.DayEvent.update(event.id, { time: newTime, start_time: newTime, sync_source: "calendar", sync_updated_at: new Date().toISOString() });
+    await loadEvents();
+  }
+
+  function openNew(dateStr = "") {
+    setEditingEvent(null);
+    setCopyData(null);
+    setDefaultDate(dateStr);
+    setModalOpen(true);
+  }
+
+  function openEdit(event) {
+    if (event.source_kind === "training_session" && (event.training_session_id || event.source_entity_id)) {
+      navigate(`/sessions?session=${event.training_session_id || event.source_entity_id}`);
+      return;
+    }
+    if (event.source_kind === "match_report" && (event.match_id || event.source_entity_id)) {
+      navigate(`/matches/${event.match_id || event.source_entity_id}`);
+      return;
+    }
+    setEditingEvent(event);
+    setCopyData(null);
+    setDefaultDate(event.date);
+    setModalOpen(true);
+  }
+
+  function getWeekDays() {
+    return Array.from({ length: 7 }, (_, i) => currentWeekStart.clone().add(i, "day"));
+  }
+
+  // ── WEEK VIEW ──
+  function renderWeek() {
+    const days = getWeekDays();
+    const today = moment().format("YYYY-MM-DD");
+
+    return (
+      <>
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={() => setCurrentWeekStart((w) => w.clone().subtract(7, "days"))} className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors">
+            <ChevronLeft size={16} />
+          </button>
+          <h2 className="text-white font-semibold capitalize">
+            {days[0].format("D MMM")} – {days[6].format("D MMM YYYY")}
+          </h2>
+          <button onClick={() => setCurrentWeekStart((w) => w.clone().add(7, "days"))} className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors">
+            <ChevronRight size={16} />
+          </button>
+        </div>
+
+        {/* Desktop: 7 columnas sin scroll horizontal */}
+        <div className="hidden md:grid gap-2" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}>
+          {days.map((d) => {
+            const dateStr = d.format("YYYY-MM-DD");
+            const isToday = dateStr === today;
+            const dayEvents = getEventsForDate(dateStr);
+            const mdLabel = dayEvents.find((event) => event.match_day_code)?.match_day_code || (dayEvents.some((event) => effectiveEventType(event) === "Partido") ? "MD" : "");
+            return (
+              <div key={dateStr} className={`bg-zinc-900 border rounded-xl flex flex-col ${isToday ? "border-white/20 ring-1 ring-white/10" : "border-zinc-800"}`}>
+                <div className={`flex items-center justify-between px-2.5 py-2 border-b ${isToday ? "border-white/10" : "border-zinc-800"}`}>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5"><p className="truncate text-[10px] font-medium uppercase text-zinc-500">{DAY_NAMES_FULL[d.day()]}</p>{mdLabel && <span className={`rounded-full px-1.5 py-0.5 text-[7px] font-black ${mdLabel === "MD" ? "bg-red-500/15 text-red-300" : "bg-blue-500/10 text-blue-300"}`}>{mdLabel}</span>}</div>
+                    <p className={`text-base font-bold leading-tight ${isToday ? "text-white" : "text-zinc-300"}`}>{d.date()}</p>
+                  </div>
+                  <button onClick={() => openNew(dateStr)} className="p-1 rounded-lg hover:bg-zinc-700 text-zinc-500 hover:text-white transition-colors shrink-0" title="Agregar evento">
+                    <Plus size={13} />
+                  </button>
+                </div>
+                <div className="flex-1 p-1.5 space-y-1.5 min-h-[200px]">
+                  {dayEvents.length === 0 && (
+                    <p className="text-[11px] text-zinc-700 text-center pt-4">Sin eventos</p>
+                  )}
+                  {dayEvents.map((ev) => (
+                    <EventCard key={ev.id} event={ev} onOpen={setSelectedEvent} onEdit={openEdit} onDelete={handleDelete} onCopy={handleCopy} onMoveUp={handleMoveUp} onMoveDown={handleMoveDown} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Mobile: agenda vertical por días */}
+        <div className="md:hidden space-y-3">
+          {days.map((d) => {
+            const dateStr = d.format("YYYY-MM-DD");
+            const isToday = dateStr === today;
+            const dayEvents = getEventsForDate(dateStr);
+            const mdLabel = dayEvents.find((event) => event.match_day_code)?.match_day_code || (dayEvents.some((event) => effectiveEventType(event) === "Partido") ? "MD" : "");
+            return (
+              <div key={dateStr} className={`bg-zinc-900 border rounded-xl ${isToday ? "border-white/20" : "border-zinc-800"}`}>
+                <div className={`flex items-center justify-between px-3 py-2.5 border-b ${isToday ? "border-white/10" : "border-zinc-800"}`}>
+                  <div>
+                    <div className="flex items-center gap-2"><p className="text-xs font-medium uppercase text-zinc-500">{DAY_NAMES_FULL[d.day()]}</p>{mdLabel && <span className={`rounded-full px-2 py-0.5 text-[8px] font-black ${mdLabel === "MD" ? "bg-red-500/15 text-red-300" : "bg-blue-500/10 text-blue-300"}`}>{mdLabel}</span>}</div>
+                    <p className={`text-lg font-bold ${isToday ? "text-white" : "text-zinc-300"}`}>{d.date()} · {d.format("DD/MM")}</p>
+                  </div>
+                  <button onClick={() => openNew(dateStr)} className="p-1.5 rounded-lg hover:bg-zinc-700 text-zinc-500 hover:text-white transition-colors" title="Agregar evento">
+                    <Plus size={15} />
+                  </button>
+                </div>
+                <div className="p-2 space-y-2">
+                  {dayEvents.length === 0 && (
+                    <p className="text-xs text-zinc-700 text-center py-3">Sin eventos</p>
+                  )}
+                  {dayEvents.map((ev) => (
+                    <EventCard key={ev.id} event={ev} onOpen={setSelectedEvent} onEdit={openEdit} onDelete={handleDelete} onCopy={handleCopy} onMoveUp={handleMoveUp} onMoveDown={handleMoveDown} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
+
+  // ── AGENDA VIEW ──
+  function renderAgenda() {
+    const days = getWeekDays();
+    const today = moment().format("YYYY-MM-DD");
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between rounded-2xl border border-white/[0.07] bg-zinc-950 px-4 py-3">
+          <button onClick={() => setCurrentWeekStart((w) => w.clone().subtract(7, "days"))} className="rounded-xl border border-white/10 p-2 text-zinc-400 hover:text-white"><ChevronLeft size={15} /></button>
+          <div className="text-center"><p className="text-sm font-black text-white">{days[0].format("D MMM")} – {days[6].format("D MMM YYYY")}</p><p className="mt-0.5 text-[10px] text-zinc-600">Agenda operativa del plantel</p></div>
+          <button onClick={() => setCurrentWeekStart((w) => w.clone().add(7, "days"))} className="rounded-xl border border-white/10 p-2 text-zinc-400 hover:text-white"><ChevronRight size={15} /></button>
+        </div>
+        {days.map((day) => {
+          const dateStr = day.format("YYYY-MM-DD");
+          const dayEvents = getEventsForDate(dateStr);
+          const isToday = dateStr === today;
+          return <section key={dateStr} className={`overflow-hidden rounded-2xl border ${isToday ? "border-blue-500/30 bg-blue-500/[0.035]" : "border-white/[0.07] bg-zinc-900/70"}`}>
+            <header className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3"><div className="flex items-baseline gap-3"><p className={`text-xs font-black uppercase tracking-wider ${isToday ? "text-blue-300" : "text-zinc-500"}`}>{day.format("dddd")}</p><p className="text-xl font-black text-white">{day.format("D")}</p><p className="text-xs text-zinc-600">{day.format("MMMM")}</p>{isToday && <span className="rounded-full bg-blue-500 px-2 py-0.5 text-[8px] font-black text-white">HOY</span>}</div><button onClick={() => openNew(dateStr)} className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-white"><Plus size={11}/>Agregar</button></header>
+            {dayEvents.length ? <div className="divide-y divide-white/[0.05]">{dayEvents.map((event) => {
+              const source = eventSourceLabel(event);
+              const c = COLOR_MAP[event.color] || COLOR_MAP.blue;
+              return <button key={event.id} onClick={() => setSelectedEvent(event)} className="flex w-full items-center gap-4 px-4 py-3 text-left transition hover:bg-white/[0.025]"><div className="w-14 shrink-0 text-sm font-black text-white">{eventStartTime(event) || "—"}</div><div className={`h-9 w-1 rounded-full ${c.dot}`} /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="truncate text-sm font-bold text-white">{event.title}</p><span className="rounded-full border border-white/10 bg-black/20 px-2 py-0.5 text-[8px] font-black uppercase text-zinc-500">{source}</span></div><p className="mt-1 truncate text-[11px] text-zinc-500">{[effectiveEventType(event), event.location, event.duration_minutes ? `${event.duration_minutes} min` : ""].filter(Boolean).join(" · ")}</p></div>{event.rival_logo_url && <img src={event.rival_logo_url} alt="" className="h-8 w-8 object-contain"/>}<ChevronRight size={14} className="text-zinc-700"/></button>})}</div> : <div className="px-4 py-5 text-center text-xs text-zinc-700">Sin actividades programadas</div>}
+          </section>;
+        })}
+      </div>
+    );
+  }
+
+  // ── MONTH VIEW ──
+  function renderMonth() {
+    const DAYS_HEADER = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+    const startOfMonth = currentMonth.clone();
+    const gridStart = startOfMonth.clone().startOf("isoWeek");
+    const gridEnd = currentMonth.clone().endOf("month").endOf("isoWeek");
+    const days = [];
+    let day = gridStart.clone();
+    while (day.isSameOrBefore(gridEnd, "day")) { days.push(day.clone()); day.add(1, "day"); }
+    const today = moment().format("YYYY-MM-DD");
+
+    return (
+      <>
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={() => setCurrentMonth((m) => m.clone().subtract(1, "month"))} className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors">
+            <ChevronLeft size={16} />
+          </button>
+          <h2 className="text-white font-semibold capitalize">{currentMonth.format("MMMM YYYY")}</h2>
+          <button onClick={() => setCurrentMonth((m) => m.clone().add(1, "month"))} className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors">
+            <ChevronRight size={16} />
+          </button>
+        </div>
+        <div className="grid grid-cols-7 mb-1">
+          {DAYS_HEADER.map((d) => <div key={d} className="text-center text-xs text-zinc-600 font-medium py-1">{d}</div>)}
+        </div>
+        <div className="grid grid-cols-7 gap-px bg-zinc-800 rounded-xl overflow-hidden border border-zinc-800">
+          {days.map((d) => {
+            const dateStr = d.format("YYYY-MM-DD");
+            const isCurrentMonth = d.isSame(currentMonth, "month");
+            const isToday = dateStr === today;
+            const dayEvents = getEventsForDate(dateStr);
+            const groups = Object.values(dayEvents.reduce((acc, event) => {
+              const type = effectiveEventType(event);
+              if (!acc[type]) acc[type] = { type, count: 0, event };
+              acc[type].count += 1;
+              return acc;
+            }, {})).sort((a, b) => {
+              const priority = { Partido: 0, Entrenamiento: 1, Gimnasio: 2, Viaje: 3, Video: 4, Comida: 5 };
+              return (priority[a.type] ?? 9) - (priority[b.type] ?? 9);
+            });
+            return (
+              <div key={dateStr} className={`min-h-[112px] bg-zinc-900 p-2 ${!isCurrentMonth ? "opacity-30" : ""} cursor-pointer transition-colors hover:bg-zinc-800/60`} onClick={() => { setCurrentWeekStart(getCustomWeekStart(d.clone(), weekStartDay)); setView("agenda"); }}>
+                <div className="mb-2 flex items-center justify-between">
+                  <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${isToday ? "bg-blue-500 text-white" : "text-zinc-400"}`}>{d.date()}</div>
+                  {isCurrentMonth && <button onClick={(e) => { e.stopPropagation(); openNew(dateStr); }} className="rounded-lg p-1 text-zinc-700 hover:bg-zinc-700 hover:text-white" title="Agregar evento"><Plus size={11}/></button>}
+                </div>
+                {groups.length ? <div className="space-y-1.5">{groups.slice(0, 3).map((group) => {
+                  const c = COLOR_MAP[group.event.color] || COLOR_MAP.blue;
+                  return <div key={group.type} className="flex items-center gap-1.5"><span className={`h-2 w-2 shrink-0 rounded-full ${c.dot}`}/><span className="min-w-0 flex-1 truncate text-[9px] font-bold text-zinc-400">{group.type}</span><span className="text-[9px] font-black text-zinc-600">{group.count}</span></div>;
+                })}{groups.length > 3 && <p className="pl-3.5 text-[9px] font-bold text-zinc-700">+{groups.length - 3} categorías</p>}</div> : <p className="pt-2 text-center text-[9px] text-zinc-800">Sin agenda</p>}
+                {dayEvents.length > 0 && <p className="mt-2 border-t border-white/[0.04] pt-1.5 text-[8px] font-bold text-zinc-700">{dayEvents.length} {dayEvents.length === 1 ? "actividad" : "actividades"}</p>}
+              </div>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 border-2 border-zinc-700 border-t-white rounded-full animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <PageTour pageKey="calendar-operational-v1" steps={CALENDAR_TOUR} autoStart={false} />
+      <div data-tour="calendar-header" className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-300">Calendario operativo conectado</p>
+          <h1 className="mt-1 text-2xl font-black text-white tracking-tight">Calendario · {activeSquad?.name || "Plantel"}</h1>
+          <p className="text-zinc-500 text-sm mt-1">Sesiones, partidos y agenda operativa en una única línea de tiempo.</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={() => { const today = moment().format("YYYY-MM-DD"); setTimelineDate(today); setCurrentWeekStart(getCustomWeekStart(moment(), weekStartDay)); setCurrentMonth(moment().startOf("month")); }} className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-400 hover:text-white"><CalendarDays size={13}/>Hoy</button>
+          <div className="flex items-center bg-zinc-800 rounded-lg p-1 gap-1">
+            <button onClick={() => setView("timeline")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === "timeline" ? "bg-white text-zinc-900" : "text-zinc-400 hover:text-white"}`}>Cronograma</button>
+            <button onClick={() => setView("agenda")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === "agenda" ? "bg-white text-zinc-900" : "text-zinc-400 hover:text-white"}`}>Agenda</button>
+            <button onClick={() => setView("week")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === "week" ? "bg-white text-zinc-900" : "text-zinc-400 hover:text-white"}`}>Semana</button>
+            <button onClick={() => setView("month")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === "month" ? "bg-white text-zinc-900" : "text-zinc-400 hover:text-white"}`}>Mes</button>
+          </div>
+          {integrationSettings && <button onClick={() => setSourcesOpen(true)} className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition ${activeCalendarLinked ? "border-blue-500/25 bg-blue-500/[0.08] text-blue-300 hover:bg-blue-500/[0.12]" : "border-white/10 bg-zinc-950 text-zinc-400 hover:text-white"}`} title="Ver fuentes e integraciones del calendario">{activeCalendarLinked ? <CheckCircle2 size={13}/> : <Link2 size={13}/>}Fuentes</button>}
+          {view === "week" && (
+            <>
+              <button onClick={() => setShowAiImport(true)} className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-500 transition-colors" title="Importar cronograma con IA">
+                <Sparkles size={15} /> Importar con IA
+              </button>
+              <button onClick={() => setShowSettings(true)} className="flex items-center gap-1.5 px-3 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm hover:bg-zinc-700 transition-colors" title="Configurar semana">
+                <Settings2 size={15} /> Configurar
+              </button>
+              <button onClick={() => setShowExport(true)} className="flex items-center gap-1.5 px-3 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm hover:bg-zinc-700 transition-colors">
+                <Download size={15} /> Exportar calendario
+              </button>
+            </>
+          )}
+          <div data-tour="calendar-new" className="relative">
+            <button onClick={() => setNewMenuOpen((value) => !value)} className="flex items-center gap-1.5 px-3 py-2 bg-white text-zinc-900 rounded-lg text-sm font-semibold hover:bg-zinc-200 transition-colors"><Plus size={15} /> Nuevo</button>
+            {newMenuOpen && <>
+              <button aria-label="Cerrar menú" onClick={() => setNewMenuOpen(false)} className="fixed inset-0 z-30 cursor-default" />
+              <div className="absolute right-0 top-11 z-40 w-64 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 p-1.5 shadow-2xl">
+                <button onClick={() => { setNewMenuOpen(false); openNew(moment().format("YYYY-MM-DD")); }} className="w-full rounded-xl px-3 py-2.5 text-left hover:bg-zinc-800"><p className="text-xs font-black text-white">Evento operativo</p><p className="mt-0.5 text-[10px] text-zinc-500">Comida, viaje, reunión, video, control u otro.</p></button>
+                <button onClick={() => navigate("/sessions?new=1")} className="w-full rounded-xl px-3 py-2.5 text-left hover:bg-zinc-800"><p className="text-xs font-black text-emerald-300">Sesión</p><p className="mt-0.5 text-[10px] text-zinc-500">Crear desde Sesiones para mantener una sola fuente.</p></button>
+                <button onClick={() => navigate("/matches")} className="w-full rounded-xl px-3 py-2.5 text-left hover:bg-zinc-800"><p className="text-xs font-black text-red-300">Partido</p><p className="mt-0.5 text-[10px] text-zinc-500">Crear o gestionar desde Partidos.</p></button>
+              </div>
+            </>}
+          </div>
+        </div>
+      </div>
+
+      {view !== "timeline" && (
+        <DailyScheduleWidget
+          compact
+          squadId={activeSquadId}
+          squadName={activeSquad?.name || ""}
+          seasonId={activeSeasonId || activeSquad?.season || ""}
+          date={moment().format("YYYY-MM-DD")}
+          onOpenFull={() => { setTimelineDate(moment().format("YYYY-MM-DD")); setView("timeline"); }}
+        />
+      )}
+
+      <div data-tour="calendar-filters" className={`flex flex-wrap items-center gap-2 rounded-2xl border border-white/[0.07] bg-zinc-900/60 p-3 ${view === "timeline" ? "hidden" : ""}`}>
+        <span className="px-1 text-[10px] font-black uppercase tracking-wider text-zinc-600">Mostrar</span>
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-xs font-semibold text-zinc-300"><option value="all">Todos los tipos</option>{EVENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select>
+        <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-xs font-semibold text-zinc-300"><option value="all">Todas las fuentes</option><option value="training_session">Sesiones</option><option value="match_report">Partidos</option><option value="competition_integration">Integración</option><option value="manual">Manual</option><option value="ai_import">Importado</option><option value="legacy_import">Legado</option></select>
+        {(typeFilter !== "all" || sourceFilter !== "all") && <button onClick={() => { setTypeFilter("all"); setSourceFilter("all"); }} className="rounded-xl px-3 py-2 text-xs font-bold text-zinc-500 hover:text-white">Limpiar filtros</button>}
+        <div className="ml-auto text-[10px] text-zinc-600">{displayEvents.length} elementos · {sessions.length} sesiones · {matches.length} partidos</div>
+      </div>
+
+      <CalendarQualityPanel audit={calendarAudit} hiddenDuplicateCount={calendarView.hiddenDuplicateCount} normalizing={normalizingCalendar} onNormalize={() => normalizeCalendar()} isAdmin={isAdmin} />
+
+      {integrationMessage && (
+        <div className="flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/[0.07] px-4 py-3 text-xs text-blue-200">
+          <Link2 size={14} className="shrink-0" />
+          <span>{integrationMessage}</span>
+          <button type="button" onClick={() => setIntegrationMessage("")} className="ml-auto text-blue-300/60 hover:text-white"><X size={13} /></button>
+        </div>
+      )}
+
+      {/* Banner de pegado */}
+      {copyingEvent && (
+        <div className="flex items-center gap-3 bg-violet-500/10 border border-violet-500/30 rounded-xl px-4 py-3">
+          <Copy size={15} className="text-violet-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-violet-300 font-semibold truncate">Copiando: <span className="text-white">{copyingEvent.title}</span></p>
+            <p className="text-xs text-zinc-500 mt-0.5">Elegí el día de destino:</p>
+          </div>
+          <input
+            type="date"
+            value={copyTargetDate}
+            onChange={(e) => setCopyTargetDate(e.target.value)}
+            className="bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-violet-500"
+          />
+          <button
+            onClick={handlePaste}
+            disabled={!copyTargetDate}
+            className="px-4 py-1.5 rounded-lg text-sm bg-violet-600 text-white font-semibold hover:bg-violet-700 disabled:opacity-40 transition-colors"
+          >
+            Pegar
+          </button>
+          <button
+            onClick={() => { setCopyingEvent(null); setCopyTargetDate(""); }}
+            className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-white transition-colors"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
+
+      <div data-tour="calendar-content">
+        {view === "timeline" ? (
+          <DailyScheduleWidget
+            squadId={activeSquadId}
+            squadName={activeSquad?.name || ""}
+            seasonId={activeSeasonId || activeSquad?.season || ""}
+            date={timelineDate}
+            onDateChange={setTimelineDate}
+          />
+        ) : view === "agenda" ? renderAgenda() : view === "week" ? renderWeek() : renderMonth()}
+      </div>
+
+      <CalendarEventDrawer
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        onOpenSource={(event) => { setSelectedEvent(null); openEdit(event); }}
+        onEdit={(event) => { setSelectedEvent(null); openEdit(event); }}
+        onCopy={(event) => { setSelectedEvent(null); handleCopy(event); }}
+        onDelete={async (id) => { setSelectedEvent(null); await handleDelete(id); }}
+      />
+
+      <CalendarSourcesPanel
+        open={sourcesOpen}
+        onClose={() => setSourcesOpen(false)}
+        integrationSettings={integrationSettings}
+        activeCalendarLinked={activeCalendarLinked}
+        integrationBusy={integrationBusy}
+        onToggle={toggleIntegratedCalendar}
+        onSync={() => syncIntegratedCalendar()}
+        activeSquad={activeSquad}
+        isAdmin={isAdmin}
+      />
+
+      <EventModal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditingEvent(null); setCopyData(null); }}
+        onSave={handleSave}
+        initial={editingEvent}
+        copyData={copyData}
+        defaultDate={defaultDate}
+        clubs={rivalClubs}
+        onClubCreated={(club) => setRivalClubs((current) => [...current, club])}
+      />
+
+      <WeekSettingsModal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        startDay={weekStartDay}
+        onChangeStartDay={handleChangeStartDay}
+      />
+
+      <AiScheduleImportModal
+        open={showAiImport}
+        onClose={() => setShowAiImport(false)}
+        activeSquad={activeSquad}
+        activeSquadId={activeSquadId}
+        activeSeasonId={activeSeasonId || activeSquad?.season || ""}
+        onImported={loadEvents}
+      />
+
+      <ScheduleExportModal
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        activeSquad={activeSquad}
+        eventsForDate={getEventsForDate}
+        currentWeekStart={currentWeekStart}
+        currentMonth={currentMonth}
+      />
+    </div>
+  );
+}
+
+export default function Schedule() {
+  const { demoActive } = useDemo();
+  return demoActive ? <DemoSchedule /> : <OperationalSchedule />;
+}

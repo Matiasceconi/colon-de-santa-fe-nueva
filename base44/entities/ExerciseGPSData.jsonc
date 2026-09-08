@@ -1,0 +1,131 @@
+{
+  "name": "ExerciseGPSData",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "ID de la sesi\u00f3n"
+    },
+    "exercise_id": {
+      "type": "string",
+      "description": "ID del ejercicio (SessionExercise)"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "ID del jugador"
+    },
+    "player_name": {
+      "type": "string",
+      "description": "Nombre oficial del jugador"
+    },
+    "player_name_original": {
+      "type": "string",
+      "description": "Nombre tal como vino en el CSV"
+    },
+    "block_number": {
+      "type": "number",
+      "description": "N\u00famero de bloque dentro del ejercicio"
+    },
+    "block_label": {
+      "type": "string",
+      "description": "Etiqueta visible del bloque"
+    },
+    "duration": {
+      "type": "string",
+      "description": "Duraci\u00f3n (HH:MM:SS)"
+    },
+    "total_distance": {
+      "type": "number",
+      "description": "Distancia total (m)"
+    },
+    "m_min": {
+      "type": "number",
+      "description": "Metros por minuto"
+    },
+    "distance_14_19_8": {
+      "type": "number",
+      "description": "D 14-19.8 km/h (m)"
+    },
+    "distance_19_8": {
+      "type": "number",
+      "description": "D 19.8-25 km/h (m)"
+    },
+    "distance_25": {
+      "type": "number",
+      "description": "D+ 25 km/h (m)"
+    },
+    "sprints": {
+      "type": "number",
+      "description": "Sprint Efforts"
+    },
+    "acc_2_3_eff": {
+      "type": "number",
+      "description": "Cantidad de aceleraciones 2-3 m/s\u00b2"
+    },
+    "acc_2_3_distance": {
+      "type": "number",
+      "description": "Distancia en aceleraciones 2-3 m/s\u00b2"
+    },
+    "acc_3": {
+      "type": "number",
+      "description": "Cantidad de aceleraciones +3 m/s\u00b2"
+    },
+    "acc_3_distance": {
+      "type": "number",
+      "description": "Distancia en aceleraciones +3 m/s\u00b2"
+    },
+    "dec_2_3_eff": {
+      "type": "number",
+      "description": "Cantidad de desaceleraciones 2-3 m/s\u00b2"
+    },
+    "dec_2_3_distance": {
+      "type": "number",
+      "description": "Distancia en desaceleraciones 2-3 m/s\u00b2"
+    },
+    "dec_3": {
+      "type": "number",
+      "description": "Cantidad de desaceleraciones +3 m/s\u00b2"
+    },
+    "dec_3_distance": {
+      "type": "number",
+      "description": "Distancia en desaceleraciones +3 m/s\u00b2"
+    },
+    "hmld": {
+      "type": "number",
+      "description": "Distancia metab\u00f3lica de alta intensidad"
+    },
+    "player_load": {
+      "type": "number",
+      "description": "Total Player Load"
+    },
+    "player_load_per_min": {
+      "type": "number",
+      "description": "Player Load por minuto"
+    },
+    "rhie_bouts": {
+      "type": "number",
+      "description": "Cantidad de bloques RHIE"
+    },
+    "smax": {
+      "type": "number",
+      "description": "Velocidad m\u00e1xima (km/h)"
+    },
+    "max_vel_percent": {
+      "type": "number",
+      "description": "% Vel. M\u00e1xima"
+    },
+    "source_file": {
+      "type": "string",
+      "description": "Nombre del archivo CSV origen"
+    },
+    "extra_metrics": {
+      "type": "object",
+      "description": "Columnas adicionales conservadas desde el CSV"
+    }
+  },
+  "required": [
+    "session_id",
+    "exercise_id",
+    "player_id"
+  ]
+}

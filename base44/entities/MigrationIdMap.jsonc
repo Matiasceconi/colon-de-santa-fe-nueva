@@ -1,0 +1,46 @@
+{
+  "name": "MigrationIdMap",
+  "type": "object",
+  "properties": {
+    "migration_run_id": {
+      "type": "string"
+    },
+    "entity_name": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "target_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "migration_run_id",
+    "entity_name",
+    "source_id",
+    "target_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

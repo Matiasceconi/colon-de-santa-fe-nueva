@@ -1,0 +1,56 @@
+{
+  "name": "CompetitionSyncState",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Clave \u00fanica l\u00f3gica del estado de sincronizaci\u00f3n, por ejemplo afa_primary"
+    },
+    "provider": {
+      "type": "string",
+      "description": "Proveedor de datos de competencia"
+    },
+    "season": {
+      "type": "string",
+      "description": "Temporada sincronizada"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "syncing",
+        "success",
+        "error"
+      ],
+      "default": "idle",
+      "description": "Estado de la \u00faltima sincronizaci\u00f3n"
+    },
+    "last_started_at": {
+      "type": "string",
+      "description": "Inicio de la \u00faltima sincronizaci\u00f3n"
+    },
+    "last_success_at": {
+      "type": "string",
+      "description": "\u00daltima sincronizaci\u00f3n correcta"
+    },
+    "last_error_at": {
+      "type": "string",
+      "description": "\u00daltimo error de sincronizaci\u00f3n"
+    },
+    "last_error": {
+      "type": "string",
+      "description": "Mensaje del \u00faltimo error"
+    },
+    "last_summary": {
+      "type": "string",
+      "description": "Resumen de la \u00faltima ejecuci\u00f3n"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "Marca l\u00f3gica de actualizaci\u00f3n"
+    }
+  },
+  "required": [
+    "key"
+  ]
+}

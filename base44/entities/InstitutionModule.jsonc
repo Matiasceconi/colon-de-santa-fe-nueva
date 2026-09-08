@@ -1,0 +1,55 @@
+{
+  "name": "InstitutionModule",
+  "type": "object",
+  "properties": {
+    "module_id": {
+      "type": "string",
+      "description": "ID estable del m\u00f3dulo, coincidente con areasConfig.MODULES"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el m\u00f3dulo est\u00e1 habilitado para esta instancia del club"
+    },
+    "order": {
+      "type": "number",
+      "default": 0,
+      "description": "Orden institucional opcional"
+    },
+    "label_override": {
+      "type": "string",
+      "description": "Nombre visible personalizado por el club, opcional"
+    },
+    "protected": {
+      "type": "boolean",
+      "default": false,
+      "description": "M\u00f3dulo estructural que no debe poder deshabilitarse desde la interfaz normal"
+    },
+    "metadata": {
+      "type": "object",
+      "default": {},
+      "description": "Metadatos para planes comerciales o futuras opciones"
+    }
+  },
+  "required": [
+    "module_id"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

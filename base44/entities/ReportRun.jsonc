@@ -1,0 +1,186 @@
+{
+  "name": "ReportRun",
+  "type": "object",
+  "properties": {
+    "report_type": {
+      "type": "string",
+      "description": "ID estable del tipo de informe, ej. session.professional"
+    },
+    "template_version": {
+      "type": "string",
+      "description": "Versi\u00f3n del template visual/funcional"
+    },
+    "snapshot_schema_version": {
+      "type": "number",
+      "description": "Versi\u00f3n del esquema del snapshot"
+    },
+    "renderer": {
+      "type": "string",
+      "description": "Motor usado para renderizar, ej. react-pdf"
+    },
+    "renderer_version": {
+      "type": "string",
+      "description": "Versi\u00f3n del motor de render"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo visible del informe"
+    },
+    "source_type": {
+      "type": "string",
+      "description": "Tipo de entidad fuente, ej. TrainingSession"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "ID de la entidad fuente"
+    },
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel al que pertenece el informe"
+    },
+    "squad_name": {
+      "type": "string",
+      "description": "Nombre del plantel desnormalizado"
+    },
+    "season_id": {
+      "type": "string",
+      "description": "Temporada asociada"
+    },
+    "organization_name": {
+      "type": "string",
+      "description": "Nombre institucional al generar"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "prepared",
+        "rendered",
+        "failed",
+        "archived"
+      ],
+      "default": "prepared",
+      "description": "Estado del ciclo de generaci\u00f3n"
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Secciones incluidas en el informe"
+    },
+    "orientation": {
+      "type": "string",
+      "enum": [
+        "portrait",
+        "landscape",
+        "auto"
+      ],
+      "default": "auto",
+      "description": "Orientaci\u00f3n solicitada"
+    },
+    "options": {
+      "type": "object",
+      "default": {},
+      "description": "Opciones del constructor de informe"
+    },
+    "filters_snapshot": {
+      "type": "object",
+      "default": {},
+      "description": "Filtros exactos usados para generar el snapshot"
+    },
+    "brand_snapshot": {
+      "type": "object",
+      "default": {},
+      "description": "Identidad institucional congelada al generar"
+    },
+    "data_snapshot": {
+      "type": "object",
+      "default": {},
+      "description": "Datos inmutables usados por el renderer"
+    },
+    "snapshot_hash": {
+      "type": "string",
+      "description": "SHA-256 del snapshot normalizado"
+    },
+    "generated_by_email": {
+      "type": "string",
+      "description": "Email del usuario que inici\u00f3 el informe"
+    },
+    "generated_by_name": {
+      "type": "string",
+      "description": "Nombre del usuario que inici\u00f3 el informe"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora de creaci\u00f3n del snapshot"
+    },
+    "ai_summary": {
+      "type": "string",
+      "description": "Resumen IA aprobado/editable del informe"
+    },
+    "ai_summary_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "generated",
+        "edited",
+        "approved"
+      ],
+      "default": "none",
+      "description": "Estado del resumen IA"
+    },
+    "artifact_url": {
+      "type": "string",
+      "description": "URL del PDF persistido"
+    },
+    "artifact_filename": {
+      "type": "string",
+      "description": "Nombre del archivo PDF"
+    },
+    "artifact_mime_type": {
+      "type": "string",
+      "description": "MIME type del archivo"
+    },
+    "artifact_size_bytes": {
+      "type": "number",
+      "description": "Tama\u00f1o del PDF final"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora de finalizaci\u00f3n"
+    }
+  },
+  "required": [
+    "report_type",
+    "template_version",
+    "source_type",
+    "source_id",
+    "squad_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

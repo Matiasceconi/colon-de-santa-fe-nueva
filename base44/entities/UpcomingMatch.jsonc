@@ -1,0 +1,86 @@
+{
+  "name": "UpcomingMatch",
+  "type": "object",
+  "properties": {
+    "competition": {
+      "type": "string",
+      "description": "Nombre de la competencia"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categor\u00eda (ej: Novena, Proyecci\u00f3n, Primera)"
+    },
+    "matchDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del partido"
+    },
+    "matchTime": {
+      "type": "string",
+      "description": "Hora del partido (HH:MM)"
+    },
+    "homeTeam": {
+      "type": "string",
+      "description": "Equipo local"
+    },
+    "awayTeam": {
+      "type": "string",
+      "description": "Equipo visitante"
+    },
+    "homeLogo": {
+      "type": "string",
+      "description": "URL del escudo del equipo local"
+    },
+    "awayLogo": {
+      "type": "string",
+      "description": "URL del escudo del equipo visitante"
+    },
+    "external_key": {
+      "type": "string",
+      "description": "Clave estable del proveedor para evitar duplicados"
+    },
+    "venue": {
+      "type": "string",
+      "description": "Cancha o estadio"
+    },
+    "round": {
+      "type": "string",
+      "description": "Fecha o n\u00famero de jornada"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "played",
+        "postponed"
+      ],
+      "default": "scheduled",
+      "description": "Estado del partido"
+    },
+    "homeScore": {
+      "type": "number",
+      "description": "Goles del local (si fue jugado)"
+    },
+    "awayScore": {
+      "type": "number",
+      "description": "Goles del visitante (si fue jugado)"
+    },
+    "season": {
+      "type": "string",
+      "description": "Temporada"
+    },
+    "source": {
+      "type": "string",
+      "description": "Origen: ligaprofesional.ar o API-Football"
+    }
+  },
+  "required": [
+    "competition",
+    "category",
+    "matchDate",
+    "homeTeam",
+    "awayTeam",
+    "season",
+    "status"
+  ]
+}

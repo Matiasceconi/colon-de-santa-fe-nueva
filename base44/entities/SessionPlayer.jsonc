@@ -1,0 +1,100 @@
+{
+  "name": "SessionPlayer",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "ID de la sesi\u00f3n (TrainingSession)"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "ID del jugador"
+    },
+    "player_name": {
+      "type": "string",
+      "description": "Nombre del jugador (desnormalizado)"
+    },
+    "position": {
+      "type": "string",
+      "description": "Posici\u00f3n del jugador (desnormalizado)"
+    },
+    "squad_name": {
+      "type": "string",
+      "description": "Plantel base del jugador (desnormalizado)"
+    },
+    "status_at_session": {
+      "type": "string",
+      "enum": [
+        "disponible",
+        "diferenciado",
+        "lesionado",
+        "molestia",
+        "ausente",
+        "sube_a_reserva",
+        "baj\u00f3",
+        "subi\u00f3",
+        "convocado",
+        "suspendido",
+        "reintegro"
+      ],
+      "description": "Estado del jugador seg\u00fan DailySquadStatus al momento de la sesi\u00f3n"
+    },
+    "attendance": {
+      "type": "string",
+      "enum": [
+        "presente",
+        "ausente",
+        "diferenciado",
+        "kinesiologia",
+        "no_entrena"
+      ],
+      "default": "presente",
+      "description": "Asistencia real a la sesi\u00f3n. 'kinesiologia' = estuvo presente pero trabaj\u00f3 con el \u00e1rea m\u00e9dica/kinesiolog\u00eda, no cuenta como presente en campo ni como ausente"
+    },
+    "minutes": {
+      "type": "number",
+      "description": "Minutos de entrenamiento"
+    },
+    "rpe": {
+      "type": "number",
+      "description": "Percepci\u00f3n del esfuerzo (0-10 escala CR10)"
+    },
+    "rpe_comment": {
+      "type": "string",
+      "description": "Comentario opcional del jugador sobre el RPE"
+    },
+    "rpe_submitted_at": {
+      "type": "string",
+      "description": "Fecha/hora del primer env\u00edo del RPE por el jugador"
+    },
+    "rpe_updated_at": {
+      "type": "string",
+      "description": "Fecha/hora de la \u00faltima actualizaci\u00f3n del RPE"
+    },
+    "rpe_source": {
+      "type": "string",
+      "enum": [
+        "player",
+        "staff"
+      ],
+      "description": "Origen del RPE: player (portal) o staff (panel)"
+    },
+    "internal_load": {
+      "type": "number",
+      "description": "Carga interna = rpe \u00d7 minutos realizados"
+    },
+    "internal_load_pending": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si la carga interna est\u00e1 pendiente porque no hay duraci\u00f3n definida"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observaciones individuales"
+    }
+  },
+  "required": [
+    "session_id",
+    "player_id"
+  ]
+}

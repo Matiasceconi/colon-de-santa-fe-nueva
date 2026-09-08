@@ -1,0 +1,17 @@
+{
+  "name": "syncCompetitionCalendar",
+  "description": "Vincula próximos partidos integrados con el calendario operativo de los planteles configurados. Respeta eventos editados manualmente y no crea MatchReport salvo que la instancia lo habilite.",
+  "timeout": 120,
+  "automations": [
+    {
+      "name": "Sincronización horaria de partidos con calendario",
+      "description": "Si la instancia habilitó la vinculación, actualiza los próximos partidos integrados en el calendario. Si está desactivada, no modifica nada.",
+      "type": "scheduled",
+      "schedule_mode": "recurring",
+      "schedule_type": "simple",
+      "repeat_unit": "hours",
+      "repeat_interval": 1,
+      "is_active": true
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "name": "FootballApiSettings",
+  "type": "object",
+  "properties": {
+    "api_key": {
+      "type": "string",
+      "description": "API key de API-Football (api-football.com)"
+    },
+    "base_url": {
+      "type": "string",
+      "default": "https://v3.football.api-sports.io",
+      "description": "URL base de la API"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si la configuraci\u00f3n est\u00e1 activa"
+    },
+    "last_test_at": {
+      "type": "string",
+      "description": "Fecha/hora de la \u00faltima prueba de conexi\u00f3n"
+    },
+    "last_test_ok": {
+      "type": "boolean",
+      "description": "Si la \u00faltima prueba fue exitosa"
+    },
+    "rate_limit_remaining": {
+      "type": "number",
+      "description": "Requests restantes del l\u00edmite (header x-ratelimit-remaining)"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "Fecha/hora de actualizaci\u00f3n"
+    }
+  },
+  "required": [
+    "api_key"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

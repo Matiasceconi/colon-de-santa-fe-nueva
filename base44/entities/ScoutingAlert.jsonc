@@ -1,0 +1,115 @@
+{
+  "name": "ScoutingAlert",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "alert_key": {
+      "type": "string",
+      "description": "Clave idempotente de la alerta"
+    },
+    "alert_type": {
+      "type": "string",
+      "enum": [
+        "contract_expiry",
+        "stale_observation",
+        "assignment_due",
+        "decision_due",
+        "priority_without_report",
+        "market_signal",
+        "availability_change",
+        "need_target_due"
+      ],
+      "default": "market_signal"
+    },
+    "prospect_id": {
+      "type": "string"
+    },
+    "recruitment_need_id": {
+      "type": "string"
+    },
+    "assignment_id": {
+      "type": "string"
+    },
+    "decision_id": {
+      "type": "string"
+    },
+    "market_signal_id": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium"
+    },
+    "title": {
+      "type": "string"
+    },
+    "detail": {
+      "type": "string"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "acknowledged",
+        "resolved",
+        "dismissed"
+      ],
+      "default": "open"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "acknowledged_by_id": {
+      "type": "string"
+    },
+    "acknowledged_by_name": {
+      "type": "string"
+    },
+    "acknowledged_at": {
+      "type": "string"
+    },
+    "resolved_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "alert_key",
+    "alert_type",
+    "title"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

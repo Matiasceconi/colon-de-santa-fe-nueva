@@ -1,0 +1,182 @@
+{
+  "name": "WeeklyPlan",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string",
+      "description": "ID de organizaci\u00f3n para construir la clave estable del plan"
+    },
+    "plan_key": {
+      "type": "string",
+      "description": "Clave \u00fanica l\u00f3gica: organization_id + squad_id + season_id + week_start (o target_match_id en planes autom\u00e1ticos match_to_match)"
+    },
+    "squad_id": {
+      "type": "string",
+      "description": "ID del plantel al que pertenece el plan"
+    },
+    "squad_name": {
+      "type": "string",
+      "description": "Nombre del plantel (desnormalizado)"
+    },
+    "season_id": {
+      "type": "string",
+      "description": "Temporada activa del plantel"
+    },
+    "week_start": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha inicial hist\u00f3rica del plan semanal (YYYY-MM-DD)"
+    },
+    "week_end": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha final hist\u00f3rica calculada desde days_data"
+    },
+    "planning_mode": {
+      "type": "string",
+      "enum": [
+        "match_to_match",
+        "calendar_week"
+      ],
+      "default": "match_to_match",
+      "description": "Modo de planificaci\u00f3n: entre partidos o semana calendario"
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date",
+      "description": "Inicio operativo del microciclo"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date",
+      "description": "Fin operativo del microciclo"
+    },
+    "previous_match_id": {
+      "type": "string",
+      "description": "ID del partido anterior usado como referencia"
+    },
+    "target_match_id": {
+      "type": "string",
+      "description": "ID del pr\u00f3ximo partido objetivo del microciclo"
+    },
+    "migration_status": {
+      "type": "string",
+      "description": "Estado de migraci\u00f3n hacia WeeklyPlanDay"
+    },
+    "legacy_days_data_snapshot": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": [],
+      "description": "Copia inmutable de days_data antes de migrar"
+    },
+    "active_day_source": {
+      "type": "string",
+      "enum": [
+        "days_data",
+        "weekly_plan_day"
+      ],
+      "default": "days_data",
+      "description": "Fuente activa de d\u00edas para compatibilidad progresiva"
+    },
+    "version": {
+      "type": "number",
+      "default": 1,
+      "description": "Versi\u00f3n del plan semanal"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "Fecha/hora l\u00f3gica de \u00faltima actualizaci\u00f3n"
+    },
+    "microcycle_meta": {
+      "type": "object",
+      "description": "Encabezado editable del microciclo: semana, rango, pr\u00f3ximo partido, d\u00eda actual, tipo de semana y campos configurables"
+    },
+    "template_type": {
+      "type": "string",
+      "description": "Plantilla de microciclo aplicada"
+    },
+    "graph_type": {
+      "type": "string",
+      "enum": [
+        "barras",
+        "linea",
+        "area",
+        "radar"
+      ],
+      "default": "barras",
+      "description": "Tipo de gr\u00e1fico seleccionado para distribuci\u00f3n de carga"
+    },
+    "days_data": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "D\u00edas hist\u00f3ricos del plan. Se conserva por compatibilidad y respaldo"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas generales de la semana"
+    },
+    "auto_generated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indica si el plan fue generado autom\u00e1ticamente por el motor de planificaci\u00f3n"
+    },
+    "generation_source": {
+      "type": "string",
+      "enum": [
+        "matches_and_sessions",
+        "calendar_week_fallback",
+        "legacy"
+      ],
+      "description": "Origen de la generaci\u00f3n autom\u00e1tica del plan"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "synced",
+        "rebuilding",
+        "needs_review",
+        "error"
+      ],
+      "default": "synced",
+      "description": "Estado de sincronizaci\u00f3n con las fuentes reales (partidos y sesiones)"
+    },
+    "needs_review": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el plan requiere revisi\u00f3n manual por conflictos detectados"
+    },
+    "review_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Motivos por los que el plan requiere revisi\u00f3n"
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "Fecha/hora l\u00f3gica de la \u00faltima generaci\u00f3n autom\u00e1tica"
+    },
+    "last_source_change_at": {
+      "type": "string",
+      "description": "Fecha/hora del \u00faltimo cambio detectado en las fuentes (partidos/sesiones)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "superseded",
+        "archived"
+      ],
+      "default": "active",
+      "description": "Estado operativo del plan: active, superseded (reemplazado por otro microciclo) o archived"
+    }
+  },
+  "required": [
+    "week_start"
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "name": "YouthImportBatch",
+  "type": "object",
+  "properties": {
+    "club_name": {
+      "type": "string",
+      "description": "Club detectado desde InstitutionProfile"
+    },
+    "club_key": {
+      "type": "string",
+      "description": "Identificador normalizado del club"
+    },
+    "season": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "default": "Liga Profesional de F\u00fatbol"
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "checking",
+        "ready",
+        "needs_review",
+        "applied",
+        "rejected",
+        "error"
+      ],
+      "default": "checking"
+    },
+    "summary": {
+      "type": "object",
+      "default": {}
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    },
+    "source_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_by": {
+      "type": "string"
+    },
+    "error_message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "club_name",
+    "club_key",
+    "season",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

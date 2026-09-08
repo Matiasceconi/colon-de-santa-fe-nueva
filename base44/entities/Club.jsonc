@@ -1,0 +1,47 @@
+{
+  "name": "Club",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre completo del club"
+    },
+    "short_name": {
+      "type": "string",
+      "description": "Nombre corto (ej: Boca Jrs., River)"
+    },
+    "normalized_name": {
+      "type": "string",
+      "description": "Nombre normalizado para b\u00fasqueda (min\u00fascula, sin tildes)"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL del escudo del club (ej: https://media.api-sports.io/football/teams/451.png)"
+    },
+    "primary_color": {
+      "type": "string",
+      "description": "Color principal del club en hex (ej: #2D2E58)"
+    },
+    "text_color": {
+      "type": "string",
+      "description": "Color de texto sobre el color principal (ej: #FFFFFF)"
+    },
+    "city": {
+      "type": "string",
+      "description": "Ciudad del club"
+    },
+    "api_football_id": {
+      "type": "number",
+      "description": "ID del club en API-Football"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el club est\u00e1 activo para seleccionar"
+    }
+  },
+  "required": [
+    "name",
+    "logo_url"
+  ]
+}

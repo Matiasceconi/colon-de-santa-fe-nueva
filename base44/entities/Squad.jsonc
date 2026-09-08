@@ -1,0 +1,58 @@
+{
+  "name": "Squad",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre del plantel (ej: Reserva, Cuarta, Primera)"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categor\u00eda (ej: 2006, Sub-20)"
+    },
+    "season": {
+      "type": "string",
+      "description": "Temporada (ej: 2025, 2025/2026)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el plantel est\u00e1 activo"
+    },
+    "staff": {
+      "type": "string",
+      "description": "Cuerpo t\u00e9cnico (texto libre)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observaciones"
+    },
+    "club_name": {
+      "type": "string",
+      "description": "Nombre del club propietario del plantel para exportaciones"
+    },
+    "club_short_name": {
+      "type": "string",
+      "description": "Abreviatura del club para encabezados compactos"
+    },
+    "club_logo_url": {
+      "type": "string",
+      "description": "URL del escudo del club para exportaciones y cronogramas"
+    },
+    "brand_primary": {
+      "type": "string",
+      "description": "Color principal del club (hex) para exportaciones"
+    },
+    "brand_secondary": {
+      "type": "string",
+      "description": "Color secundario del club (hex) para exportaciones"
+    },
+    "brand_accent": {
+      "type": "string",
+      "description": "Color de acento del club (hex) para exportaciones"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

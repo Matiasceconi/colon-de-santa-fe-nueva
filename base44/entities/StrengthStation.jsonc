@@ -1,0 +1,127 @@
+{
+  "name": "StrengthStation",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "ID de la TrainingSession"
+    },
+    "work_block_id": {
+      "type": "string",
+      "description": "ID del cuadro de trabajo de fuerza al que pertenece el ejercicio"
+    },
+    "station_number": {
+      "type": "number",
+      "description": "N\u00famero de fila dentro del cuadro"
+    },
+    "order": {
+      "type": "number",
+      "default": 0,
+      "description": "Orden dentro del cuadro o sesi\u00f3n"
+    },
+    "strength_group": {
+      "type": "string",
+      "default": "",
+      "description": "Nombre del cuadro o grupo de fuerza dentro de la sesi\u00f3n (compatibilidad)"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Imagen del ejercicio (heredada de biblioteca)"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "URL de video"
+    },
+    "method": {
+      "type": "string",
+      "description": "M\u00e9todo de trabajo (ej: Din\u00e1micos, Contrastes)"
+    },
+    "exercise_type": {
+      "type": "string",
+      "description": "Tipo de trabajo (ej: Potencia, Fuerza m\u00e1xima)"
+    },
+    "exercise_name": {
+      "type": "string",
+      "description": "Nombre del ejercicio"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categor\u00eda del ejercicio (heredada de biblioteca)"
+    },
+    "volume": {
+      "type": "string",
+      "description": "Volumen en formato libre (ej: 3x8, 3+3, 12+12). Campo legado, usar series para prescripci\u00f3n detallada"
+    },
+    "restore_exercise": {
+      "type": "string",
+      "description": "Ejercicio restaura"
+    },
+    "compensate_exercise": {
+      "type": "string",
+      "description": "Ejercicio compensa"
+    },
+    "sets": {
+      "type": "string",
+      "description": "Series (legado, usar series para prescripci\u00f3n detallada)"
+    },
+    "reps": {
+      "type": "string",
+      "description": "Repeticiones (legado, usar series para prescripci\u00f3n detallada)"
+    },
+    "time": {
+      "type": "string",
+      "description": "Tiempo (legado, usar series para prescripci\u00f3n detallada)"
+    },
+    "rest_time": {
+      "type": "string",
+      "description": "Pausa general del ejercicio en segundos (aplica a todas sus series)"
+    },
+    "rir": {
+      "type": "string",
+      "description": "RIR"
+    },
+    "objective": {
+      "type": "string",
+      "description": "Objetivo"
+    },
+    "muscle_group": {
+      "type": "string",
+      "description": "Grupo muscular"
+    },
+    "vector_pattern": {
+      "type": "string",
+      "description": "Patr\u00f3n vectorial"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Indicaciones t\u00e9cnicas del ejercicio"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Etiquetas"
+    },
+    "series": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": [],
+      "description": "Prescripci\u00f3n serie por serie. Cada elemento: { reps, time, load_type, load_value }. load_type: kg | pct_1rm | pct_bodyweight | none"
+    },
+    "library_exercise_id": {
+      "type": "string",
+      "description": "ID en StrengthExerciseLibrary si viene de biblioteca (legado)"
+    },
+    "library_strength_exercise_id": {
+      "type": "string",
+      "description": "ID en StrengthExerciseLibrary si viene de biblioteca"
+    }
+  },
+  "required": [
+    "session_id"
+  ]
+}

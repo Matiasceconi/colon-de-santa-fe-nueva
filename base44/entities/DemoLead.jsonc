@@ -1,0 +1,91 @@
+{
+  "name": "DemoLead",
+  "type": "object",
+  "properties": {
+    "auth_user_id": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "role_title": {
+      "type": "string"
+    },
+    "club_name": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "utm_campaign": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "contacted",
+        "meeting",
+        "proposal",
+        "client",
+        "discarded"
+      ],
+      "default": "new"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "registered_at": {
+      "type": "string"
+    },
+    "verified_at": {
+      "type": "string"
+    },
+    "last_login_at": {
+      "type": "string"
+    },
+    "last_activity_at": {
+      "type": "string"
+    },
+    "login_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "email"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

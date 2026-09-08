@@ -1,0 +1,73 @@
+{
+  "name": "Standings",
+  "type": "object",
+  "properties": {
+    "competition": {
+      "type": "string",
+      "description": "Nombre de la competencia (ej: Novena, Proyecci\u00f3n, Primera, B Nacional, Copa Argentina)"
+    },
+    "season": {
+      "type": "string",
+      "description": "Temporada (ej: 2026)"
+    },
+    "team": {
+      "type": "string",
+      "description": "Nombre del club"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL del escudo del club"
+    },
+    "position": {
+      "type": "number",
+      "description": "Posici\u00f3n en la tabla"
+    },
+    "points": {
+      "type": "number",
+      "description": "Puntos"
+    },
+    "played": {
+      "type": "number",
+      "description": "Partidos jugados"
+    },
+    "won": {
+      "type": "number",
+      "description": "Ganados"
+    },
+    "drawn": {
+      "type": "number",
+      "description": "Empatados"
+    },
+    "lost": {
+      "type": "number",
+      "description": "Perdidos"
+    },
+    "goalsFor": {
+      "type": "number",
+      "description": "Goles a favor"
+    },
+    "goalsAgainst": {
+      "type": "number",
+      "description": "Goles en contra"
+    },
+    "goalDiff": {
+      "type": "number",
+      "description": "Diferencia de gol"
+    },
+    "group": {
+      "type": "string",
+      "description": "Grupo o zona (ej: Grupo A, Grupo B) cuando hay zonas"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date",
+      "description": "\u00daltima actualizaci\u00f3n"
+    }
+  },
+  "required": [
+    "competition",
+    "season",
+    "team",
+    "position"
+  ]
+}

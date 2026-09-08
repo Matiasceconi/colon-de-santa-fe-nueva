@@ -1,0 +1,15 @@
+import React from "react";
+import { Briefcase, Mail, Phone, ShieldCheck, X } from "lucide-react";
+import { formatLastSeen, staffName } from "@/components/staff/staffDirectoryUtils";
+
+function Row({ label, children }) { return <div><p className="text-[10px] uppercase tracking-wider text-zinc-600">{label}</p><div className="mt-1 text-sm text-zinc-300">{children || "—"}</div></div>; }
+export default function StaffProfileModal({ entry, squads, canEdit, onEdit, onClose }) {
+  const { access, member, roleNames } = entry;
+  const name = staffName(entry);
+  const squadNames = access.all_squads ? "Todos los planteles" : (access.squad_ids || []).map(id => squads.find(s => s.id === id)?.name).filter(Boolean).join(", ") || (access.squad_names || []).join(", ");
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"><section className="w-full max-w-lg rounded-2xl border border-zinc-700 bg-zinc-900 text-white shadow-2xl">
+    <header className="flex items-start gap-4 border-b border-zinc-800 p-5">{member?.photo_url ? <img src={member.photo_url} alt={name} className="h-16 w-16 rounded-full object-cover"/> : <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800 text-xl font-bold text-zinc-400">{name[0]}</div>}<div className="flex-1"><h2 className="text-lg font-bold">{name}</h2><p className="mt-1 text-sm text-zinc-400">{member?.job_title || member?.role || access.role || "Sin función informada"}</p></div><button type="button" onClick={onClose} aria-label="Cerrar"><X size={18} className="text-zinc-500"/></button></header>
+    <div className="grid grid-cols-2 gap-5 p-5"><Row label="Rol laboral"><Briefcase size={12} className="mr-1 inline"/>{member?.role}</Row><Row label="Cargo / función">{member?.job_title}</Row><Row label="Email"><Mail size={12} className="mr-1 inline"/>{member?.email || access.user_email}</Row><Row label="Teléfono"><Phone size={12} className="mr-1 inline"/>{member?.phone}</Row><Row label="Planteles habilitados"><ShieldCheck size={12} className="mr-1 inline"/>{squadNames}</Row><Row label="Roles de acceso">{roleNames.join(", ") || access.role}</Row><Row label="Estado">{access.active !== false ? "Activo" : "Inactivo"}</Row><Row label="Último ingreso">{formatLastSeen(access.last_seen)}</Row>{member?.notes && <div className="col-span-2"><Row label="Notas">{member.notes}</Row></div>}</div>
+    <footer className="flex justify-end gap-2 border-t border-zinc-800 p-4">{canEdit && member && <button type="button" onClick={() => onEdit(member)} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-zinc-900">Editar información</button>}<button type="button" onClick={onClose} className="rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-300">Cerrar</button></footer>
+  </section></div>;
+}

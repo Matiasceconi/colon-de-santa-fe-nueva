@@ -1,0 +1,61 @@
+{
+  "name": "InstitutionOption",
+  "type": "object",
+  "properties": {
+    "group": {
+      "type": "string",
+      "description": "Grupo de configuraci\u00f3n institucional, por ejemplo season, player_category o player_position"
+    },
+    "key": {
+      "type": "string",
+      "description": "Clave estable dentro del grupo"
+    },
+    "label": {
+      "type": "string",
+      "description": "Texto visible para el usuario"
+    },
+    "order": {
+      "type": "number",
+      "default": 0,
+      "description": "Orden de aparici\u00f3n"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si la opci\u00f3n est\u00e1 habilitada"
+    },
+    "system": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si es una opci\u00f3n estructural protegida frente a borrados accidentales"
+    },
+    "metadata": {
+      "type": "object",
+      "default": {},
+      "description": "Metadatos opcionales para futuras configuraciones"
+    }
+  },
+  "required": [
+    "group",
+    "key",
+    "label"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

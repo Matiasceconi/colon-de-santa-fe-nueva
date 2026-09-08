@@ -1,0 +1,82 @@
+{
+  "name": "DemoAnalyticsEvent",
+  "type": "object",
+  "properties": {
+    "visitor_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "auth_user_id": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string",
+      "enum": [
+        "landing_view",
+        "demo_cta_click",
+        "registration_started",
+        "registration_completed",
+        "login_completed",
+        "demo_entered",
+        "demo_guided_started",
+        "demo_free_started",
+        "demo_page_view",
+        "whatsapp_click",
+        "meeting_click"
+      ]
+    },
+    "path": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "utm_source": {
+      "type": "string"
+    },
+    "utm_medium": {
+      "type": "string"
+    },
+    "utm_campaign": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "occurred_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "visitor_id",
+    "event_name",
+    "occurred_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "name": "MigrationRun",
+  "type": "object",
+  "properties": {
+    "source_app_id": {
+      "type": "string"
+    },
+    "source_app_name": {
+      "type": "string"
+    },
+    "target_app_id": {
+      "type": "string"
+    },
+    "target_app_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "staging",
+        "ready",
+        "running",
+        "completed",
+        "completed_with_errors",
+        "failed"
+      ],
+      "default": "staging"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "staging",
+        "purge",
+        "create",
+        "patch",
+        "finalize",
+        "completed"
+      ],
+      "default": "staging"
+    },
+    "total_records": {
+      "type": "number",
+      "default": 0
+    },
+    "staged_records": {
+      "type": "number",
+      "default": 0
+    },
+    "created_records": {
+      "type": "number",
+      "default": 0
+    },
+    "patched_records": {
+      "type": "number",
+      "default": 0
+    },
+    "error_records": {
+      "type": "number",
+      "default": 0
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": "string"
+    },
+    "last_message": {
+      "type": "string"
+    },
+    "preserved_access_note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_app_id",
+    "target_app_id",
+    "status",
+    "phase"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

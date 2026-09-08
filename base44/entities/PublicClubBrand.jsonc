@@ -1,0 +1,62 @@
+{
+  "name": "PublicClubBrand",
+  "type": "object",
+  "properties": {
+    "club_name": {
+      "type": "string",
+      "description": "Nombre visible del club en la pantalla p\u00fablica de ingreso"
+    },
+    "short_name": {
+      "type": "string",
+      "description": "Nombre corto del club"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL p\u00fablica del escudo o logo"
+    },
+    "primary_color": {
+      "type": "string",
+      "default": "#2563EB",
+      "description": "Color principal hexadecimal"
+    },
+    "accent_color": {
+      "type": "string",
+      "default": "#60A5FA",
+      "description": "Color de acento hexadecimal"
+    },
+    "support_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email de ayuda visible para usuarios"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "club_name"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

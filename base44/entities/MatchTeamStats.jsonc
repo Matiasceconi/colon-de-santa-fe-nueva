@@ -1,0 +1,136 @@
+{
+  "name": "MatchTeamStats",
+  "type": "object",
+  "properties": {
+    "match_id": {
+      "type": "string",
+      "description": "Partido MatchReport vinculado"
+    },
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel del partido"
+    },
+    "season_id": {
+      "type": "string",
+      "description": "Temporada"
+    },
+    "team_side": {
+      "type": "string",
+      "enum": [
+        "own",
+        "rival"
+      ],
+      "description": "Equipo propio o rival"
+    },
+    "stats_key": {
+      "type": "string",
+      "description": "Clave can\u00f3nica match_id:team_side"
+    },
+    "possession_pct": {
+      "type": "number"
+    },
+    "shots": {
+      "type": "number"
+    },
+    "shots_on_target": {
+      "type": "number"
+    },
+    "shots_off_target": {
+      "type": "number"
+    },
+    "blocked_shots": {
+      "type": "number"
+    },
+    "corners": {
+      "type": "number"
+    },
+    "fouls": {
+      "type": "number"
+    },
+    "offsides": {
+      "type": "number"
+    },
+    "yellow_cards": {
+      "type": "number"
+    },
+    "red_cards": {
+      "type": "number"
+    },
+    "passes": {
+      "type": "number"
+    },
+    "accurate_passes": {
+      "type": "number"
+    },
+    "pass_accuracy_pct": {
+      "type": "number"
+    },
+    "xg": {
+      "type": "number",
+      "description": "Expected Goals opcional"
+    },
+    "field_tilt_pct": {
+      "type": "number"
+    },
+    "ppda": {
+      "type": "number"
+    },
+    "recoveries": {
+      "type": "number"
+    },
+    "turnovers": {
+      "type": "number"
+    },
+    "progressive_passes": {
+      "type": "number"
+    },
+    "final_third_entries": {
+      "type": "number"
+    },
+    "box_entries": {
+      "type": "number"
+    },
+    "advanced_metrics": {
+      "type": "object",
+      "default": {},
+      "description": "M\u00e9tricas adicionales del proveedor sin acoplar el core a una API concreta"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "integration"
+      ],
+      "default": "manual"
+    },
+    "provider": {
+      "type": "string",
+      "description": "Proveedor externo opcional"
+    },
+    "external_match_id": {
+      "type": "string"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "needs_review"
+      ],
+      "default": "confirmed"
+    },
+    "imported_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "updated_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "match_id",
+    "team_side",
+    "stats_key"
+  ]
+}

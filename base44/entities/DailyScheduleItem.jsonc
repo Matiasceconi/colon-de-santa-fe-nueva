@@ -1,0 +1,201 @@
+{
+  "name": "DailyScheduleItem",
+  "type": "object",
+  "properties": {
+    "schedule_id": {
+      "type": "string",
+      "description": "Cronograma diario padre"
+    },
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel"
+    },
+    "squad_name": {
+      "type": "string",
+      "description": "Nombre del plantel"
+    },
+    "season_id": {
+      "type": "string",
+      "description": "Temporada"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Hora de inicio HH:MM"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Hora de fin HH:MM"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "description": "Duraci\u00f3n estimada"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Orden dentro del d\u00eda"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo visible"
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "training",
+        "match",
+        "wellness",
+        "rpe",
+        "complementary",
+        "kinesiology",
+        "equipment",
+        "nutrition",
+        "video",
+        "meeting",
+        "travel",
+        "evaluation",
+        "meal",
+        "recovery",
+        "other"
+      ],
+      "default": "manual",
+      "description": "Tipo operativo de actividad"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "training_session",
+        "match_report",
+        "wellness",
+        "rpe",
+        "complementary_workout",
+        "kinesiology_session",
+        "equipment_checklist",
+        "day_event"
+      ],
+      "default": "manual",
+      "description": "Fuente can\u00f3nica vinculada"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "ID de la entidad can\u00f3nica vinculada"
+    },
+    "source_key": {
+      "type": "string",
+      "description": "Clave \u00fanica source_type:source_id para evitar duplicados"
+    },
+    "location": {
+      "type": "string",
+      "description": "Lugar"
+    },
+    "responsible_area": {
+      "type": "string",
+      "enum": [
+        "cuerpo_tecnico",
+        "rendimiento_fisico",
+        "area_medica",
+        "kinesiologia",
+        "nutricion",
+        "utileria",
+        "coordinacion_general",
+        "otro"
+      ],
+      "description": "\u00c1rea responsable principal"
+    },
+    "responsible_user_id": {
+      "type": "string",
+      "description": "Usuario responsable"
+    },
+    "responsible_name": {
+      "type": "string",
+      "description": "Nombre responsable"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "squad",
+        "specific_players",
+        "staff",
+        "mixed"
+      ],
+      "default": "squad",
+      "description": "Destinatarios de la actividad"
+    },
+    "player_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Jugadores espec\u00edficos cuando corresponde"
+    },
+    "staff_user_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Staff espec\u00edfico"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "staff_only",
+        "squad_players",
+        "specific_players",
+        "mixed"
+      ],
+      "default": "staff_only",
+      "description": "Qui\u00e9n puede ver la actividad"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "planned",
+      "description": "Estado operativo"
+    },
+    "completion_source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "linked_source",
+        "time_based"
+      ],
+      "default": "manual",
+      "description": "Origen del estado"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas operativas"
+    },
+    "is_generated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Creado autom\u00e1ticamente desde otra entidad"
+    },
+    "synced_at": {
+      "type": "string",
+      "description": "\u00daltima sincronizaci\u00f3n con la fuente"
+    },
+    "action_path": {
+      "type": "string",
+      "description": "Ruta interna sugerida para abrir la fuente"
+    }
+  },
+  "required": [
+    "squad_id",
+    "date",
+    "title"
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "name": "ScoutingMarketSignal",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "prospect_id": {
+      "type": "string"
+    },
+    "prospect_name": {
+      "type": "string"
+    },
+    "signal_type": {
+      "type": "string",
+      "enum": [
+        "contract_expiry",
+        "availability_change",
+        "market_value_change",
+        "agent_update",
+        "club_change",
+        "transfer_rumor",
+        "performance_note",
+        "manual"
+      ],
+      "default": "manual"
+    },
+    "signal_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "occurred_at": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "scout",
+        "provider",
+        "agent",
+        "club",
+        "public"
+      ],
+      "default": "manual"
+    },
+    "source_name": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "unverified",
+        "verified",
+        "rejected"
+      ],
+      "default": "unverified"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "old_value": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "new_value": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "created_by_id": {
+      "type": "string"
+    },
+    "created_by_name": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "prospect_id",
+    "signal_type",
+    "signal_date"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

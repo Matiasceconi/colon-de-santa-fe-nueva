@@ -1,0 +1,118 @@
+{
+  "name": "KinesiologySession",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "session_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "session_type": {
+      "type": "string",
+      "enum": [
+        "treatment",
+        "gym",
+        "field",
+        "mixed",
+        "evaluation"
+      ],
+      "default": "treatment"
+    },
+    "stage": {
+      "type": "string"
+    },
+    "objective": {
+      "type": "string"
+    },
+    "treatment_notes": {
+      "type": "string"
+    },
+    "exercise_notes": {
+      "type": "string"
+    },
+    "pain_pre": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "pain_post": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "tolerance": {
+      "type": "string",
+      "enum": [
+        "good",
+        "limited",
+        "adverse"
+      ],
+      "default": "good"
+    },
+    "field_minutes": {
+      "type": "number"
+    },
+    "running_minutes": {
+      "type": "number"
+    },
+    "max_speed_pct": {
+      "type": "number"
+    },
+    "training_session_id": {
+      "type": "string"
+    },
+    "gps_session_id": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "completed",
+        "cancelled"
+      ],
+      "default": "completed"
+    },
+    "created_by_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "player_id",
+    "session_date"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

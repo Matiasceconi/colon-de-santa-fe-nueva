@@ -1,0 +1,59 @@
+{
+  "name": "YouthImportConfiguration",
+  "type": "object",
+  "properties": {
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "auto_check": {
+      "type": "boolean",
+      "default": true
+    },
+    "auto_apply_safe": {
+      "type": "boolean",
+      "default": true
+    },
+    "check_interval_hours": {
+      "type": "number",
+      "default": 24
+    },
+    "source_base_url": {
+      "type": "string",
+      "default": "https://www.ligaprofesional.ar"
+    },
+    "last_check_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_success_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_club_key": {
+      "type": "string"
+    }
+  },
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

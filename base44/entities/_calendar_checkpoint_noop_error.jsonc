@@ -1,0 +1,10 @@
+{
+  "name": "_calendar_checkpoint_noop_error",
+  "type": "object",
+  "properties": {
+    "x": {
+      "type": "string"
+    }
+  },
+  "required": []
+}

@@ -1,0 +1,51 @@
+{
+  "name": "StaffInvitation",
+  "type": "object",
+  "properties": {
+    "access_id": {
+      "type": "string",
+      "description": "UserAccess que se habilitar\u00e1 al aceptar"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "token_hash": {
+      "type": "string",
+      "description": "Hash SHA-256 del token; el token original nunca se guarda"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "created_by_email": {
+      "type": "string",
+      "format": "email"
+    },
+    "activation_version": {
+      "type": "integer",
+      "description": "Versi\u00f3n del alta; 2 requiere enlace privado y cuenta verificada. Ausente conserva compatibilidad."
+    }
+  },
+  "required": [
+    "access_id",
+    "email",
+    "token_hash",
+    "expires_at",
+    "active"
+  ],
+  "rls": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

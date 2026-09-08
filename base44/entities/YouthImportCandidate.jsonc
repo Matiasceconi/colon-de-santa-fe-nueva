@@ -1,0 +1,101 @@
+{
+  "name": "YouthImportCandidate",
+  "type": "object",
+  "properties": {
+    "batch_id": {
+      "type": "string"
+    },
+    "record_type": {
+      "type": "string",
+      "enum": [
+        "fixture",
+        "standing"
+      ]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "4ta",
+        "5ta",
+        "6ta",
+        "7ma",
+        "8va",
+        "9na"
+      ]
+    },
+    "external_key": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "create",
+        "update",
+        "conflict"
+      ]
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "safe",
+        "review"
+      ]
+    },
+    "issue": {
+      "type": "string"
+    },
+    "target_id": {
+      "type": "string"
+    },
+    "before": {
+      "type": "object",
+      "default": {}
+    },
+    "payload": {
+      "type": "object",
+      "default": {}
+    },
+    "selected": {
+      "type": "boolean",
+      "default": true
+    },
+    "applied": {
+      "type": "boolean",
+      "default": false
+    },
+    "applied_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "batch_id",
+    "record_type",
+    "category",
+    "external_key",
+    "action",
+    "validation_status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

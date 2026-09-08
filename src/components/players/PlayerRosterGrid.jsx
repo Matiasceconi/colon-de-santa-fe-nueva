@@ -1,0 +1,12 @@
+import React from "react";
+import { Pencil } from "lucide-react";
+import PlayerPhoto from "@/components/player/PlayerPhoto";
+
+export default function PlayerRosterGrid({ rows, onOpen, onEdit, canEdit }) {
+  if (!rows.length) return <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-12 text-center text-sm text-zinc-500">No hay jugadores que coincidan con los filtros seleccionados.</div>;
+  return <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{rows.map(({ player, categoryName, age, height, weight }) => <button type="button" key={player.id} onClick={() => onOpen(player)} className="group relative rounded-2xl border border-zinc-800 bg-zinc-900 p-4 text-left hover:border-zinc-700 hover:bg-zinc-800/60">
+    {canEdit && <span onClick={(e) => { e.stopPropagation(); onEdit(player); }} className="absolute right-3 top-3 rounded-lg p-2 text-zinc-600 opacity-0 hover:bg-zinc-700 hover:text-white group-hover:opacity-100"><Pencil size={14} /></span>}
+    <div className="flex items-center gap-4"><PlayerPhoto player={player} className="h-16 w-16 rounded-2xl border border-zinc-700 object-cover" fallbackClassName="flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-700 bg-zinc-800" textClassName="text-xl font-bold text-zinc-500" /><div className="min-w-0"><p className="truncate font-bold text-white">{player.first_name} {player.last_name}</p><p className="mt-1 text-xs font-medium text-cyan-400">{categoryName}</p></div></div>
+    <div className="mt-4 grid grid-cols-3 gap-2 border-t border-zinc-800 pt-3"><div><p className="text-[10px] uppercase text-zinc-600">Posición</p><p className="mt-1 truncate text-xs text-zinc-300">{player.position || "—"}</p></div><div><p className="text-[10px] uppercase text-zinc-600">Edad</p><p className="mt-1 text-xs text-zinc-300">{age !== null ? `${age} años` : "—"}</p></div><div><p className="text-[10px] uppercase text-zinc-600">Pierna</p><p className="mt-1 text-xs text-zinc-300">{player.dominant_leg || "—"}</p></div><div><p className="text-[10px] uppercase text-zinc-600">Peso</p><p className="mt-1 text-xs text-zinc-300">{weight != null ? `${Number(weight).toFixed(1)} kg` : "—"}</p></div><div><p className="text-[10px] uppercase text-zinc-600">Talla</p><p className="mt-1 text-xs text-zinc-300">{height != null ? `${Number(height).toFixed(0)} cm` : "—"}</p></div></div>
+  </button>)}</div>;
+}

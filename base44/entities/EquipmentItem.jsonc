@@ -1,0 +1,98 @@
+{
+  "name": "EquipmentItem",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "squad_id": {
+      "type": "string",
+      "description": "Vac\u00edo si el stock es compartido por el club"
+    },
+    "name": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "training_kit",
+        "match_kit",
+        "footwear",
+        "balls",
+        "field_equipment",
+        "gym_equipment",
+        "medical_support",
+        "performance_support",
+        "hydration",
+        "other"
+      ],
+      "default": "other"
+    },
+    "sku": {
+      "type": "string"
+    },
+    "size": {
+      "type": "string"
+    },
+    "variant": {
+      "type": "string"
+    },
+    "unit": {
+      "type": "string",
+      "default": "unidad"
+    },
+    "quantity_total": {
+      "type": "number",
+      "default": 0
+    },
+    "quantity_available": {
+      "type": "number",
+      "default": 0
+    },
+    "min_stock": {
+      "type": "number",
+      "default": 0
+    },
+    "storage_location": {
+      "type": "string"
+    },
+    "supplier": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "notes": {
+      "type": "string"
+    },
+    "updated_by_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

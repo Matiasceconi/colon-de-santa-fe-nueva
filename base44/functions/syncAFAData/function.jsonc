@@ -1,0 +1,16 @@
+{
+  "name": "syncAFAData",
+  "entry": "entry.ts",
+  "automations": [
+    {
+      "name": "Sincronización horaria de competencias",
+      "description": "Actualiza tablas y próximos partidos de las competencias configuradas. La función evita trabajo innecesario si la fuente todavía está vigente.",
+      "type": "scheduled",
+      "schedule_mode": "recurring",
+      "schedule_type": "simple",
+      "repeat_unit": "hours",
+      "repeat_interval": 1,
+      "is_active": true
+    }
+  ]
+}

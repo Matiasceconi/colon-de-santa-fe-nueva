@@ -1,0 +1,83 @@
+{
+  "name": "ReportArtifact",
+  "type": "object",
+  "properties": {
+    "report_run_id": {
+      "type": "string",
+      "description": "ID de ReportRun"
+    },
+    "report_type": {
+      "type": "string",
+      "description": "Tipo de informe desnormalizado"
+    },
+    "squad_id": {
+      "type": "string",
+      "description": "Plantel del informe"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL persistida del PDF"
+    },
+    "filename": {
+      "type": "string",
+      "description": "Nombre del archivo"
+    },
+    "mime_type": {
+      "type": "string",
+      "default": "application/pdf",
+      "description": "MIME type"
+    },
+    "size_bytes": {
+      "type": "number",
+      "description": "Tama\u00f1o del archivo"
+    },
+    "renderer": {
+      "type": "string",
+      "description": "Motor usado"
+    },
+    "renderer_version": {
+      "type": "string",
+      "description": "Versi\u00f3n del motor"
+    },
+    "checksum": {
+      "type": "string",
+      "description": "Checksum opcional del artefacto"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora de persistencia"
+    },
+    "created_by_email": {
+      "type": "string",
+      "description": "Usuario que persisti\u00f3 el artefacto"
+    }
+  },
+  "required": [
+    "report_run_id",
+    "file_url",
+    "filename"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
