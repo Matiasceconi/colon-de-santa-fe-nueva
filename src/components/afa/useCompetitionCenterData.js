@@ -88,11 +88,27 @@ function dedupeMatches(rows) {
     const key = [
       normalizeCompetitionText(match.competition),
       matchDateValue(match),
-      normalizeTeam(match.homeTeam),
-      normalizeTeam(match.awayTeam),
+      normalizeTeam(match.homeTeam).replace(/\breserva\b/g, "").trim(),
+      normalizeTeam(match.awayTeam).replace(/\breserva\b/g, "").trim(),
     ].join("::");
     const current = map.get(key);
-    if (!current || matchCompleteness(match) > matchCompleteness(current)) map.set(key, match);
+    const sourceScore = (row) => row?.source === "manual" ? 3 : row?.source === "lpf_programacion_oficial" ? 2 : 1;
+    if (!current || sourceScore(match) > sourceScore(current) || (sourceScore(match) === sourceScore(current) && matchCompleteness(match) > matchCompleteness(current))) map.set(key, match);
+  });
+  return [...map.values()];
+}
+
+function dedupeStandings(rows) {
+  const map = new Map();
+  rows.forEach((row) => {
+    const key = [
+      row.season || "",
+      normalizeCompetitionText(row.competition),
+      normalizeCompetitionText(row.group),
+      normalizeTeam(row.team || row.teamName),
+    ].join("::");
+    const current = map.get(key);
+    if (!current || String(row.updated_date || row.lastUpdated || "") > String(current.updated_date || current.lastUpdated || "")) map.set(key, row);
   });
   return [...map.values()];
 }
@@ -310,7 +326,7 @@ export function useCompetitionCenterData() {
       match.status === "scheduled" && matchDateValue(match) === today &&
       (sameClub(match.homeTeam, aliases) || sameClub(match.awayTeam, aliases))
     ));
-    const intervalMs = isMatchDay ? 15 * 60 * 1000 : 60 * 60 * 1000;
+    const intervalMs = isMatchDay ? 5 * 60 * 1000 : 60 * 60 * 1000;
     const timer = window.setInterval(() => refresh({ synchronize: true }), intervalMs);
     return () => window.clearInterval(timer);
   }, [clubBrand, institutionProfile, raw.matches, refresh, todayKey]);
@@ -321,12 +337,13 @@ export function useCompetitionCenterData() {
     const shortName = institutionProfile?.short_name?.trim() || clubBrand?.shortName || clubName;
     const shield = institutionProfile?.shield_url || clubBrand?.logoUrl || "";
     const accent = institutionProfile?.brand_primary || clubBrand?.primary || "#3b82f6";
-    const resolvedSeason = season || raw.standings.find((row) => row.season)?.season || String(new Date().getFullYear());
+    const standings = dedupeStandings(raw.standings);
+    const resolvedSeason = season || standings.find((row) => row.season)?.season || String(new Date().getFullYear());
     const matches = dedupeMatches(raw.matches);
-    const logoMap = buildLogoMap(raw.clubs, institutionProfile, raw.standings, matches, raw.youthFixtures);
+    const logoMap = buildLogoMap(raw.clubs, institutionProfile, standings, matches, raw.youthFixtures);
 
-    const seniorCompetition = pickSeniorCompetition(raw.standings, raw.competitions, aliases);
-    const seniorAllRows = seniorCompetition ? raw.standings.filter((row) => row.competition === seniorCompetition) : [];
+    const seniorCompetition = pickSeniorCompetition(standings, raw.competitions, aliases);
+    const seniorAllRows = seniorCompetition ? standings.filter((row) => row.competition === seniorCompetition) : [];
     const seniorSplit = splitByPhase(seniorAllRows, aliases);
     const seniorCurrentRows = [...seniorSplit.currentRows].sort((a, b) => Number(a.position || 999) - Number(b.position || 999));
     const seniorAnnualRows = [...seniorSplit.annualRows].sort((a, b) => Number(a.position || 999) - Number(b.position || 999));
@@ -337,9 +354,9 @@ export function useCompetitionCenterData() {
     const seniorUpcoming = seniorMatches.filter((match) => match.status === "scheduled" && matchDateValue(match) >= todayKey());
     const seniorResults = sortMatches(seniorMatches.filter((match) => match.status === "played"), -1);
 
-    const reserveCompetition = [...new Set(raw.standings.map((row) => row.competition).filter(competitionIsReserve))]
-      .find((name) => raw.standings.some((row) => row.competition === name && sameClub(row.team, aliases))) || null;
-    const reserveAllRows = reserveCompetition ? raw.standings.filter((row) => row.competition === reserveCompetition) : [];
+    const reserveCompetition = [...new Set(standings.map((row) => row.competition).filter(competitionIsReserve))]
+      .find((name) => standings.some((row) => row.competition === name && sameClub(row.team, aliases))) || null;
+    const reserveAllRows = reserveCompetition ? standings.filter((row) => row.competition === reserveCompetition) : [];
     const reserve = splitByPhase(reserveAllRows, aliases);
     reserve.currentRows.sort((a, b) => Number(a.position || 999) - Number(b.position || 999));
     reserve.annualRows.sort((a, b) => Number(a.position || 999) - Number(b.position || 999));
@@ -352,7 +369,7 @@ export function useCompetitionCenterData() {
 
     const controlledYouthStandings = raw.youthStandings.map((row) => ({ ...row, team: row.teamName, competition: YOUTH_CATEGORIES.find((category) => category.key === row.category)?.legacy || row.category, goalDiff: row.goalDifference }));
     const controlledYouthFixtures = raw.youthFixtures.map((fixture) => ({ ...fixture, competition: YOUTH_CATEGORIES.find((category) => category.key === fixture.category)?.legacy || fixture.category, round: fixture.fixtureRound ? `Fecha ${fixture.fixtureRound}` : "" }));
-    const legacyYouthStandings = raw.standings.filter((row) => competitionIsYouth(row.competition));
+    const legacyYouthStandings = standings.filter((row) => competitionIsYouth(row.competition));
     const legacyYouthFixtures = matches.filter((match) => competitionIsYouth(match.competition || match.category));
     const controlledYouthCats = new Set(controlledYouthStandings.map((row) => toYouthCategory(row.category || row.competition)?.key).filter(Boolean));
     const youthStandings = [...controlledYouthStandings, ...legacyYouthStandings.filter((row) => {
