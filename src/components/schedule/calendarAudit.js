@@ -113,7 +113,7 @@ export function buildCalendarAudit(events = [], matches = [], sessions = []) {
   const missingTypeEvents = events.filter((event) => !String(event.event_type || event.type || "").trim());
   const seasonlessEvents = events.filter((event) => !event.season_id);
   const timeMismatchEvents = events.filter((event) => event.time && event.start_time && event.time !== event.start_time);
-  const legacySourceEvents = events.filter((event) => event.source_kind === "legacy_import" || String(event.source_file || "").includes("6a3bc03033558cd65ec27f53"));
+  const legacySourceEvents = events.filter((event) => event.source_kind === "legacy_import");
   const reviewEvents = events.filter((event) => event.data_quality_status === "review");
 
   const issueEventIds = new Set();
