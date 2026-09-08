@@ -84,6 +84,7 @@ function matchCompleteness(match) {
 
 function dedupeMatches(rows) {
   const map = new Map();
+  const sourceScore = (row) => row?.source === "manual" ? 3 : row?.source === "lpf_programacion_oficial" ? 2 : 1;
   rows.forEach((match) => {
     const key = [
       normalizeCompetitionText(match.competition),
@@ -92,8 +93,30 @@ function dedupeMatches(rows) {
       normalizeTeam(match.awayTeam).replace(/\breserva\b/g, "").trim(),
     ].join("::");
     const current = map.get(key);
-    const sourceScore = (row) => row?.source === "manual" ? 3 : row?.source === "lpf_programacion_oficial" ? 2 : 1;
-    if (!current || sourceScore(match) > sourceScore(current) || (sourceScore(match) === sourceScore(current) && matchCompleteness(match) > matchCompleteness(current))) map.set(key, match);
+    if (!current) {
+      map.set(key, match);
+      return;
+    }
+    const pair = [current, match];
+    const scheduleAuthority = [...pair].sort((a, b) => sourceScore(b) - sourceScore(a) || matchCompleteness(b) - matchCompleteness(a))[0];
+    const resultAuthority = pair.find((row) => row.status === "played" && row.homeScore != null && row.awayScore != null)
+      || pair.find((row) => row.status === "played")
+      || null;
+    const richer = [...pair].sort((a, b) => matchCompleteness(b) - matchCompleteness(a))[0];
+    map.set(key, {
+      ...richer,
+      matchDate: scheduleAuthority.matchDate || scheduleAuthority.date || richer.matchDate || richer.date || "",
+      matchTime: scheduleAuthority.matchTime || richer.matchTime || "",
+      venue: scheduleAuthority.venue || richer.venue || "",
+      round: scheduleAuthority.round || richer.round || "",
+      source: scheduleAuthority.source || richer.source,
+      external_key: current.external_key || match.external_key || richer.external_key,
+      status: resultAuthority?.status || richer.status,
+      homeScore: resultAuthority?.homeScore ?? richer.homeScore,
+      awayScore: resultAuthority?.awayScore ?? richer.awayScore,
+      homeLogo: richer.homeLogo || current.homeLogo || match.homeLogo,
+      awayLogo: richer.awayLogo || current.awayLogo || match.awayLogo,
+    });
   });
   return [...map.values()];
 }
