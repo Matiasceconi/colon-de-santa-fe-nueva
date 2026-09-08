@@ -271,6 +271,93 @@ export default async function(req) {
       return null;
     }
 
+    function decodeHtmlText(value = '') {
+      const named = { '&nbsp;': ' ', '&amp;': '&', '&quot;': '"', '&#039;': "'", '&apos;': "'", '&ndash;': '–', '&mdash;': '—' };
+      let text = String(value || '').replace(/&(nbsp|amp|quot|apos|ndash|mdash);|&#039;/g, (match) => named[match] || match);
+      text = text.replace(/&#(\d+);/g, (_match, code) => String.fromCharCode(Number(code)));
+      return text;
+    }
+
+    function officialPostLines(html = '') {
+      return decodeHtmlText(String(html || '')
+        .replace(/<br\s*\/?\s*>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<[^>]+>/g, ' '))
+        .split('\n')
+        .map((line) => line.replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
+    }
+
+    function parseOfficialProgramming(html, competition) {
+      const monthMap = {
+        enero: '01', febrero: '02', marzo: '03', abril: '04', mayo: '05', junio: '06',
+        julio: '07', agosto: '08', septiembre: '09', setiembre: '09', octubre: '10', noviembre: '11', diciembre: '12',
+      };
+      const rows = [];
+      let currentDate = '';
+      let currentRound = '';
+      for (const line of officialPostLines(html)) {
+        const roundMatch = line.match(/^fecha\s+(\d+)/i);
+        if (roundMatch) {
+          currentRound = `Fecha ${roundMatch[1]}`;
+          continue;
+        }
+        const dateMatch = normalizeKey(line).match(/^(lunes|martes|miercoles|jueves|viernes|sabado|domingo)\s+(\d{1,2})\s+de\s+([a-z]+)(?:\s+de\s+(\d{4}))?/i);
+        if (dateMatch) {
+          const month = monthMap[dateMatch[3]];
+          const year = dateMatch[4] || SEASON;
+          if (month) currentDate = `${year}-${month}-${String(dateMatch[2]).padStart(2, '0')}`;
+          const rest = line.replace(/^.*?(?=<br>|$)/i, '');
+          if (!rest) continue;
+        }
+        if (!currentDate) continue;
+        const pieces = line.split(/\s+[–—]\s+/).map((piece) => piece.trim()).filter(Boolean);
+        if (pieces.length < 2) continue;
+        const first = pieces[0].match(/^(\d{1,2})[.:](\d{2})\s+(.+)$/);
+        if (!first) continue;
+        const homeTeam = first[3].trim();
+        const awayTeam = String(pieces[1] || '').replace(/\s*\((?:zona\s+[^)]+|interzonal)\)\s*$/i, '').trim();
+        if (!homeTeam || !awayTeam) continue;
+        rows.push({
+          competition,
+          category: competition,
+          season: SEASON,
+          homeTeam,
+          awayTeam,
+          status: 'scheduled',
+          round: currentRound,
+          matchDate: currentDate,
+          matchTime: `${String(first[1]).padStart(2, '0')}:${first[2]}`,
+          venue: pieces.slice(2).join(' – '),
+          external_key: `lpf:${normalizeKey(competition)}:${currentDate}:${normalizeFixtureTeam(homeTeam)}:${normalizeFixtureTeam(awayTeam)}`,
+          source: 'lpf_programacion_oficial',
+        });
+      }
+      return rows;
+    }
+
+    async function fetchOfficialProyeccionProgramming() {
+      try {
+        const results = await fetchJson(`https://www.ligaprofesional.ar/wp-json/wp/v2/search?search=${encodeURIComponent(`agenda proyeccion ${SEASON}`)}&per_page=10`);
+        const relevant = (Array.isArray(results) ? results : [])
+          .filter((item) => String(item.url || '').includes(`/notas/proyeccion/${SEASON}/`))
+          .slice(0, 4);
+        const collected = [];
+        for (const item of relevant) {
+          try {
+            const post = await fetchJson(`https://www.ligaprofesional.ar/wp-json/wp/v2/posts/${item.id}?_fields=content,link,date,title`);
+            collected.push(...parseOfficialProgramming(post?.content?.rendered || '', 'Proyección'));
+          } catch (postError) {
+            errors.push(`Proyección oficial · ${item.title || item.id}: ${postError.message}`);
+          }
+        }
+        return uniqueByKey(collected, fixtureKey);
+      } catch (officialError) {
+        errors.push(`Programación oficial Proyección: ${officialError.message}`);
+        return [];
+      }
+    }
+
     // LPF categories
     const lpfCategories = {
       cuarta: { url: `/cuarta-${SEASON}`, name: 'Cuarta' },
