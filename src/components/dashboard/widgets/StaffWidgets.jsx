@@ -1,9 +1,106 @@
 import React from "react";
 import SessionDayMap from "@/components/sessions/SessionDayMap";
+import DayScheduleAgenda from "@/components/dashboard/DayScheduleAgenda";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
-import { Dumbbell, Users, HeartPulse, Link2, Calendar, Activity, Map as MapIcon } from "lucide-react";
+import { Dumbbell, Users, HeartPulse, Link2, Calendar, Activity, Map as MapIcon, AlertTriangle, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import moment from "moment";
+
+export function StaffDayScheduleWidget() {
+  const {
+    todayCalendarEvents, tomorrowCalendarEvents, todayKey, tomorrowKey,
+    timezone, refreshStaffData, staffLoading,
+  } = useDashboardData();
+
+  if (staffLoading) return <div className="h-64 animate-pulse rounded-2xl border border-zinc-800 bg-zinc-900" />;
+
+  return (
+    <DayScheduleAgenda
+      todayEvents={todayCalendarEvents || []}
+      tomorrowEvents={tomorrowCalendarEvents || []}
+      todayDate={todayKey}
+      tomorrowDate={tomorrowKey}
+      timezone={timezone}
+      onRefresh={refreshStaffData}
+    />
+  );
+}
+
+const WELLNESS_LEVELS = {
+  red: { label: "Roja", rank: 4, dot: "bg-red-500", badge: "border-red-500/25 bg-red-500/10 text-red-300" },
+  orange: { label: "Naranja", rank: 3, dot: "bg-orange-500", badge: "border-orange-500/25 bg-orange-500/10 text-orange-300" },
+  yellow: { label: "Amarilla", rank: 2, dot: "bg-yellow-500", badge: "border-yellow-500/25 bg-yellow-500/10 text-yellow-300" },
+  green: { label: "Verde", rank: 1, dot: "bg-emerald-500", badge: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" },
+};
+
+function PlayerAvatar({ row }) {
+  if (row.photo_url) return <img src={row.photo_url} alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover ring-1 ring-white/10" />;
+  const initials = String(row.player_name || "J").split(" ").filter(Boolean).map((part) => part[0]).slice(0, 2).join("");
+  return <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-xs font-black text-zinc-400">{initials}</span>;
+}
+
+export function WellnessPriorityWidget({ widget }) {
+  const { wellnessSummary, staffLoading, activeSquad } = useDashboardData();
+  const threshold = widget?.config?.threshold || "orange";
+  const limit = Math.max(3, Math.min(12, Number(widget?.config?.limit || 6)));
+  const thresholdRank = WELLNESS_LEVELS[threshold]?.rank || WELLNESS_LEVELS.orange.rank;
+  const alerts = (wellnessSummary?.alerts || [])
+    .filter((row) => (WELLNESS_LEVELS[row.alert_level]?.rank || 0) >= thresholdRank)
+    .slice(0, limit);
+
+  if (staffLoading) return <div className="h-52 animate-pulse rounded-2xl border border-zinc-800 bg-zinc-900" />;
+
+  return (
+    <section data-tour="staff-wellness" className="h-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/90 shadow-xl shadow-black/10">
+      <div className="flex items-start justify-between gap-3 border-b border-white/[0.07] px-5 py-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-500/25 bg-orange-500/10 text-orange-300"><AlertTriangle size={17} /></span>
+          <div className="min-w-0">
+            <h2 className="text-sm font-black text-white">Wellness prioritario</h2>
+            <p className="mt-0.5 truncate text-[11px] text-zinc-500">{activeSquad?.name || "Plantel activo"} · alertas del día</p>
+          </div>
+        </div>
+        <Link to="/performance/internal-load" className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white">
+          Abrir <ExternalLink size={11} />
+        </Link>
+      </div>
+
+      <div className="p-4">
+        {alerts.length ? (
+          <div className="space-y-2">
+            {alerts.map((row) => {
+              const level = WELLNESS_LEVELS[row.alert_level] || WELLNESS_LEVELS.yellow;
+              const reasons = Array.isArray(row.alert_reasons) ? row.alert_reasons : [];
+              return (
+                <div key={row.id || row.player_id} className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-black/20 p-2.5">
+                  <PlayerAvatar row={row} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-black text-white">{row.player_name}</p>
+                    <p className="mt-0.5 truncate text-[10px] text-zinc-500">{reasons[0] || "Revisar respuesta de Wellness"}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[9px] font-black ${level.badge}`}><span className={`h-1.5 w-1.5 rounded-full ${level.dot}`} />{level.label}</span>
+                    {row.wellness_score != null && <p className="mt-1 text-[9px] text-zinc-600">Score {Number(row.wellness_score).toFixed(1)}</p>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <Activity size={24} className="text-emerald-400" />
+            <p className="mt-2 text-sm font-bold text-zinc-300">Sin alertas en este nivel</p>
+            <p className="mt-1 text-[10px] text-zinc-600">Podés bajar el umbral desde la configuración del widget.</p>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-between border-t border-white/[0.07] px-5 py-3 text-[10px] text-zinc-500">
+        <span>{wellnessSummary?.answered || 0}/{wellnessSummary?.total || 0} respuestas</span>
+        <span>{wellnessSummary?.missing?.length || 0} pendientes</span>
+      </div>
+    </section>
+  );
+}
 
 export function TrainingTodayWidget() {
   const { trainingSessions, staffLoading } = useDashboardData();
