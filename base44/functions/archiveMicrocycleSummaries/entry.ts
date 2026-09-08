@@ -43,6 +43,9 @@ function buildSnapshot({ plan, planDays, squad, sessions, matches, rows, teamPro
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!['admin', 'staff'].includes(user.role)) return Response.json({ error: 'Forbidden' }, { status: 403 });
     const body = await req.json().catch(() => ({}));
     const today = body.today || isoDate(new Date());
     const force = !!body.force_recalculate;

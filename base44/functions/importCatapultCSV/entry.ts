@@ -139,6 +139,21 @@ Deno.serve(async (req) => {
 
     const { csv_url, session_id, session_date, file_name } = await req.json();
 
+    if (!csv_url || typeof csv_url !== 'string') {
+      return Response.json({ error: 'csv_url is required' }, { status: 400 });
+    }
+    let parsedUrl;
+    try { parsedUrl = new URL(csv_url); } catch { return Response.json({ error: 'Invalid csv_url' }, { status: 400 }); }
+    if (parsedUrl.protocol !== 'https:') {
+      return Response.json({ error: 'csv_url must use https' }, { status: 400 });
+    }
+    const host = parsedUrl.hostname.toLowerCase();
+    if (host === 'localhost' || host === '0.0.0.0' || host === '::1' || host.endsWith('.localhost') ||
+        host.endsWith('.internal') || host.endsWith('.local') || host === 'metadata.google.internal' ||
+        /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+      return Response.json({ error: 'csv_url host is not allowed' }, { status: 400 });
+    }
+
     const csvText = await fetch(csv_url).then(r => r.text());
     const parseResult = parseCatapultCSV(csvText);
     if (parseResult.error) return Response.json({ error: parseResult.error }, { status: 400 });
