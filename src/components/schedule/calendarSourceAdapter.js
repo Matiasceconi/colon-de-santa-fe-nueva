@@ -5,7 +5,7 @@ function sourceKindFromDayEvent(event = {}) {
   if (event.training_session_id) return "training_session";
   if (event.match_id || event.sync_source === "matches") return "match_report";
   if (event.sync_source === "competition_integration") return "competition_integration";
-  if (event.created_by_ai) return String(event.source_file || "").includes("6a3bc03033558cd65ec27f53") ? "legacy_import" : "ai_import";
+  if (event.created_by_ai) return "ai_import";
   return "manual";
 }
 
