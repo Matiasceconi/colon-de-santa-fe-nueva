@@ -284,7 +284,7 @@ export async function upsertImportedEvents({ previewEvents, activeSquad, activeS
   for (const ev of previewEvents) {
     const type = ev.event_type || ev.type || "Otro";
     const time = ev.start_time || ev.time || "";
-    const payload = { ...ev, home_away: normalizeHomeAway(ev.home_away), squad_id: activeSquadId, squad_name: activeSquad?.name || "", season_id: activeSeasonId || activeSquad?.season || "", time, start_time: time, type, event_type: type, duration_minutes: durationMinutes(time, ev.end_time), color: TYPE_COLORS[type] || "blue", source_file: sourceFile, source_file_name: sourceFileName, created_by_ai: true, source_kind: String(sourceFile || "").includes("6a3bc03033558cd65ec27f53") ? "legacy_import" : "ai_import", data_quality_status: "ok", quality_notes: [] };
+    const payload = { ...ev, home_away: normalizeHomeAway(ev.home_away), squad_id: activeSquadId, squad_name: activeSquad?.name || "", season_id: activeSeasonId || activeSquad?.season || "", time, start_time: time, type, event_type: type, duration_minutes: durationMinutes(time, ev.end_time), color: TYPE_COLORS[type] || "blue", source_file: sourceFile, source_file_name: sourceFileName, created_by_ai: true, source_kind: "ai_import", data_quality_status: "ok", quality_notes: [] };
     payload.import_key = importKey({ squad_id: activeSquadId, date: payload.date, time, type, title: payload.title });
     if (!payload.duration_minutes) delete payload.duration_minutes;
     if (!payload.rival_club_id) delete payload.rival_club_id;
