@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Bus, Coffee, DoorOpen, Dumbbell, ClipboardList, Trophy, HeartPulse, Users, ChevronRight, Plus, Pencil, Plane, Shirt, Utensils, Video } from "lucide-react";
+import { Bus, Coffee, DoorOpen, Dumbbell, ClipboardList, Trophy, HeartPulse, Users, ChevronRight, Plus, Pencil, Plane, Shirt, Utensils, Video, CalendarPlus } from "lucide-react";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import moment from "moment";
 import QuickEventModal from "@/components/dashboard/QuickEventModal";
 
 function SoccerPitchIcon({ size = 15, className = "" }) {
@@ -62,39 +61,61 @@ function getEventStyle(ev = {}) {
   return buildStyle(ev, { icon: DoorOpen, color: "text-zinc-300", accent: "#71717a" });
 }
 
-// Estado del evento según hora actual: pendiente | en_curso | finalizado
-function getEventStatus(ev, dateStr) {
-  if (!ev.time) return "pendiente";
-  const start = moment(`${dateStr} ${ev.time}`, "YYYY-MM-DD HH:mm");
-  if (!start.isValid()) return "pendiente";
-  const end = start.clone().add(ev.duration_minutes || 60, "minutes");
-  const now = moment();
-  if (now.isBefore(start)) return "pendiente";
-  if (now.isAfter(end)) return "finalizado";
+function eventTime(ev = {}) {
+  return String(ev.start_time || ev.time || ev.display_time || "").slice(0, 5);
+}
+
+function zonedNow(timezone) {
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone || "America/Argentina/Buenos_Aires",
+      year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+    }).formatToParts(new Date());
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return { date: `${values.year}-${values.month}-${values.day}`, minutes: Number(values.hour) * 60 + Number(values.minute) };
+  } catch {
+    const now = new Date();
+    return { date: now.toISOString().slice(0, 10), minutes: now.getHours() * 60 + now.getMinutes() };
+  }
+}
+
+// Estado del evento según la hora local del club: pendiente | en_curso | finalizado
+function getEventStatus(ev, dateStr, timezone) {
+  const now = zonedNow(timezone);
+  if (dateStr < now.date) return "finalizado";
+  if (dateStr > now.date) return "pendiente";
+  const clock = eventTime(ev);
+  if (!/^\d{2}:\d{2}$/.test(clock)) return "pendiente";
+  const [hour, minute] = clock.split(":").map(Number);
+  const startMinutes = hour * 60 + minute;
+  const duration = Math.max(1, Number(ev.duration_minutes || 60));
+  const endMinutes = startMinutes + duration;
+  if (now.minutes < startMinutes) return "pendiente";
+  if (now.minutes >= endMinutes) return "finalizado";
   return "en_curso";
 }
 
 const STATUS_LABELS = { pendiente: "Pendiente", en_curso: "En curso", finalizado: "Finalizado" };
 
-export default function DayScheduleAgenda({ todayEvents = [], tomorrowEvents = [], todayDate, tomorrowDate, onRefresh }) {
+export default function DayScheduleAgenda({ todayEvents = [], tomorrowEvents = [], todayDate, tomorrowDate, timezone = "America/Argentina/Buenos_Aires", onRefresh }) {
   const { activeSquadId, activeSquad } = useWorkspace();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
 
   const sortedToday = useMemo(
-    () => [...todayEvents].sort((a, b) => (a.time || "").localeCompare(b.time || "")),
+    () => [...todayEvents].sort((a, b) => eventTime(a).localeCompare(eventTime(b))),
     [todayEvents]
   );
   const sortedTomorrow = useMemo(
-    () => [...tomorrowEvents].sort((a, b) => (a.time || "").localeCompare(b.time || "")),
+    () => [...tomorrowEvents].sort((a, b) => eventTime(a).localeCompare(eventTime(b))),
     [tomorrowEvents]
   );
 
   // Si no hay eventos hoy, o todos ya finalizaron → mostrar el cronograma de mañana
   const showTomorrow = useMemo(() => {
     if (sortedToday.length === 0) return true;
-    return sortedToday.every(ev => getEventStatus(ev, todayDate) === "finalizado");
-  }, [sortedToday, todayDate]);
+    return sortedToday.every(ev => getEventStatus(ev, todayDate, timezone) === "finalizado");
+  }, [sortedToday, todayDate, timezone]);
 
   const displayDate = showTomorrow ? tomorrowDate : todayDate;
   const displayEvents = showTomorrow ? sortedTomorrow : sortedToday;
@@ -106,12 +127,20 @@ export default function DayScheduleAgenda({ todayEvents = [], tomorrowEvents = [
   function handleSaved() { if (onRefresh) onRefresh(); }
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
-      <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-        <h2 className="text-sm font-semibold text-white">{title}</h2>
-        <button onClick={openNew} className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white px-2 py-1 rounded-lg hover:bg-zinc-800 transition-colors">
-          <Plus size={13} /> Agregar
-        </button>
+    <div data-tour="staff-day-schedule" className="h-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/90 shadow-xl shadow-black/10">
+      <div className="flex flex-col gap-3 border-b border-white/[0.07] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-zinc-600">Agenda operativa · {activeSquad?.name || "Plantel activo"}</p>
+          <h2 className="mt-1 text-base font-black text-white">{title}</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={openNew} className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-zinc-300 transition hover:bg-white/[0.08] hover:text-white">
+            <Plus size={13} /> Actividad rápida
+          </button>
+          <Link to={`/schedule?date=${displayDate}`} className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-black text-zinc-950 transition hover:bg-zinc-200">
+            <CalendarPlus size={13} /> {displayEvents.length ? "Editar cronograma" : "Armar cronograma"}
+          </Link>
+        </div>
       </div>
       <div className="p-4">
         {displayEvents.length === 0 ? (
@@ -121,7 +150,7 @@ export default function DayScheduleAgenda({ todayEvents = [], tomorrowEvents = [
             {displayEvents.map(ev => {
               const style = getEventStyle(ev);
               const Icon = style.icon;
-              const status = getEventStatus(ev, displayDate);
+              const status = getEventStatus(ev, displayDate, timezone);
               const isFinished = status === "finalizado";
               const isOngoing = status === "en_curso";
               return (
@@ -137,7 +166,7 @@ export default function DayScheduleAgenda({ todayEvents = [], tomorrowEvents = [
                 >
                   <span className={`absolute left-0 top-0 bottom-0 w-1 ${isFinished ? "bg-zinc-700" : ""}`} style={isFinished ? undefined : { backgroundColor: style.accent }} />
                   <span className={`text-xs font-semibold w-12 shrink-0 pl-1 ${isFinished ? "text-zinc-600" : "text-zinc-200"}`}>
-                    {ev.time || "--:--"}
+                    {eventTime(ev) || "--:--"}
                   </span>
                   <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isFinished ? "bg-zinc-800 text-zinc-600" : "bg-black/20 " + style.color}`} style={isFinished ? undefined : { color: style.accent }}>
                     <Icon size={15} />
