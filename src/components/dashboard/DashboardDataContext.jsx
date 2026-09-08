@@ -412,7 +412,7 @@ export function DashboardDataProvider({ children }) {
     internalCompetitions,
     // Staff
     trainingSessions, players, playersByStatus, squadStatusTotal, todaySessionPlayers, activeInjuries, birthdayPlayers,
-    dayEvents, todayCalendarEvents, tomorrowCalendarEvents, tomorrowKey, wellnessSummary,
+    dayEvents, todayCalendarEvents, tomorrowCalendarEvents, tomorrowKey, wellnessSummary, refreshStaffData: fetchStaffData,
     matchReports, matchCallups, matchDayContext, todayKey, timezone,
   };
 
