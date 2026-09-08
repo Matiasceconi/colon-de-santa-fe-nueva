@@ -558,35 +558,66 @@ export default async function(req) {
       }
     }
 
-    // === SAFE UPSERT ===
-    // No se borra información: se actualizan claves conocidas y solo se crean faltantes.
+    // === PROGRAMACIÓN OFICIAL LPF ===
+    // La programación oficial tiene prioridad para fecha, horario, sede y número de fecha.
+    // Promiedos se conserva como apoyo para escudos, resultado y estado del partido.
+    const officialProyeccion = await fetchOfficialProyeccionProgramming();
+    for (const official of officialProyeccion) {
+      const index = fixtureRecords.findIndex((row) => fixtureKey(row) === fixtureKey(official));
+      if (index >= 0) {
+        fixtureRecords[index] = {
+          ...fixtureRecords[index],
+          matchDate: official.matchDate,
+          matchTime: official.matchTime,
+          venue: official.venue || fixtureRecords[index].venue || '',
+          round: official.round || fixtureRecords[index].round || '',
+          source: 'lpf_programacion_oficial',
+        };
+      } else {
+        fixtureRecords.push(official);
+      }
+    }
+
+    const uniqueStandings = uniqueByKey(standingsRecords, standingKey);
+    const uniqueFixtures = uniqueByKey(fixtureRecords, fixtureKey);
+
+    // === SAFE UPSERT + REPARACIÓN DE DUPLICADOS ===
     const [existingStandings, existingFixtures] = await Promise.all([
       service.Standings.filter({ season: SEASON }, '-updated_date', 2000),
       service.UpcomingMatch.filter({ season: SEASON }, 'matchDate', 5000),
     ]);
 
-    const standingByKey = new Map(existingStandings.map((row) => [standingKey(row), row]));
+    let deletedDuplicates = 0;
+    deletedDuplicates += await removeDuplicateRows(service.Standings, existingStandings, standingKey);
+    deletedDuplicates += await removeDuplicateRows(service.UpcomingMatch, existingFixtures, fixtureKey, pickCanonicalFixture);
+
+    const cleanExistingStandings = uniqueByKey(existingStandings, standingKey);
+    const cleanExistingFixtures = uniqueByKey(existingFixtures, fixtureKey);
+    const standingByKey = new Map(cleanExistingStandings.map((row) => [standingKey(row), row]));
     const standingCreates = [];
     const standingUpdates = [];
     const standingFields = ['position', 'points', 'played', 'won', 'drawn', 'lost', 'goalsFor', 'goalsAgainst', 'goalDiff', 'logo_url'];
-    for (const record of standingsRecords) {
+    for (const record of uniqueStandings) {
       const current = standingByKey.get(standingKey(record));
       if (!current) {
         standingCreates.push(record);
+        standingByKey.set(standingKey(record), record);
       } else if (changed(current, record, standingFields)) {
         standingUpdates.push({ id: current.id, payload: record });
       }
     }
 
-    const fixtureByExternal = new Map(existingFixtures.filter((row) => row.external_key).map((row) => [row.external_key, row]));
-    const fixtureByNatural = new Map(existingFixtures.map((row) => [fixtureKey(row), row]));
+    const fixtureByExternal = new Map(cleanExistingFixtures.filter((row) => row.external_key).map((row) => [row.external_key, row]));
+    const fixtureByNatural = new Map(cleanExistingFixtures.map((row) => [fixtureKey(row), row]));
     const fixtureCreates = [];
     const fixtureUpdates = [];
     const fixtureFields = ['matchTime', 'venue', 'round', 'status', 'homeScore', 'awayScore', 'homeLogo', 'awayLogo'];
-    for (const record of fixtureRecords) {
+    for (const record of uniqueFixtures) {
       const current = fixtureByExternal.get(record.external_key) || fixtureByNatural.get(fixtureKey(record));
       if (!current) {
         fixtureCreates.push(record);
+        fixtureByNatural.set(fixtureKey(record), record);
+        if (record.external_key) fixtureByExternal.set(record.external_key, record);
       } else {
         const preserveOfficialSchedule = current.source === 'lpf_programacion_oficial' || current.source === 'manual';
         const merged = {
@@ -605,19 +636,30 @@ export default async function(req) {
     for (const item of standingUpdates) await service.Standings.update(item.id, item.payload);
     for (const item of fixtureUpdates) await service.UpcomingMatch.update(item.id, item.payload);
 
+    // Segunda pasada: protege contra dos sincronizaciones que hayan arrancado casi al mismo tiempo.
+    const [standingsAfterWrite, fixturesAfterWrite] = await Promise.all([
+      service.Standings.filter({ season: SEASON }, '-updated_date', 3000).catch(() => []),
+      service.UpcomingMatch.filter({ season: SEASON }, '-updated_date', 6000).catch(() => []),
+    ]);
+    deletedDuplicates += await removeDuplicateRows(service.Standings, standingsAfterWrite, standingKey);
+    deletedDuplicates += await removeDuplicateRows(service.UpcomingMatch, fixturesAfterWrite, fixtureKey, pickCanonicalFixture);
+
     const finishedAt = new Date().toISOString();
     const summary = {
       standings: {
         received: standingsRecords.length,
+        unique: uniqueStandings.length,
         created: standingCreates.length,
         updated: standingUpdates.length,
       },
       fixtures: {
         received: fixtureRecords.length,
+        unique: uniqueFixtures.length,
+        official_schedule_rows: officialProyeccion.length,
         created: fixtureCreates.length,
         updated: fixtureUpdates.length,
       },
-      deleted: 0,
+      deleted_duplicates: deletedDuplicates,
       errors: errors.length > 0 ? errors : undefined,
     };
     const stateRows = await service.CompetitionSyncState.filter({ key: SYNC_KEY }, '-updated_date', 1).catch(() => []);
