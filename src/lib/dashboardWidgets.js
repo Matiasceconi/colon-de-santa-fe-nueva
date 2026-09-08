@@ -59,11 +59,23 @@ export const WIDGET_CATALOG = [
   },
   {
     type: "staff-day-command",
-    name: "Comando del Día",
-    description: "Sesión, disponibilidad, alertas y próximo compromiso del plantel activo.",
+    name: "Cronograma del Día",
+    description: "Agenda operativa conectada al Calendario: muestra lo realizado, lo que está en curso y lo que falta.",
     category: "staff",
     defaultSize: "full",
-    icon: Activity,
+    icon: ListChecks,
+  },
+  {
+    type: "wellness-priority",
+    name: "Wellness prioritario",
+    description: "Jugadores con alertas Wellness del día, con foto, nivel y motivo principal.",
+    category: "staff",
+    defaultSize: "md",
+    icon: HeartPulse,
+    configFields: [
+      { key: "threshold", label: "Nivel mínimo", type: "select", options: ["yellow", "orange", "red"], default: "orange" },
+      { key: "limit", label: "Jugadores", type: "number", default: 6 },
+    ],
   },
   {
     type: "training-today",
@@ -181,13 +193,13 @@ export function buildDefaultWidget(type) {
 
 export const DEFAULT_STAFF_LAYOUT = [
   { id: "staff_v2_command", type: "staff-day-command", size: "full", config: {} },
-  { id: "staff_v3_birthdays", type: "upcoming-birthdays", size: "full", config: {} },
   { id: "staff_v2_next", type: "competition-next-match", size: "md", config: { division: "active" } },
-  { id: "staff_v2_training", type: "training-today", size: "md", config: {} },
-  { id: "staff_v2_daymap", type: "session-day-map", size: "full", config: {} },
+  { id: "staff_v4_wellness", type: "wellness-priority", size: "md", config: { threshold: "orange", limit: 6 } },
   { id: "staff_v2_status", type: "squad-status", size: "md", config: {} },
   { id: "staff_v2_injuries", type: "injuries", size: "md", config: {} },
+  { id: "staff_v2_daymap", type: "session-day-map", size: "full", config: {} },
   { id: "staff_v2_agenda", type: "competition-agenda", size: "full", config: {} },
+  { id: "staff_v3_birthdays", type: "upcoming-birthdays", size: "full", config: {} },
   { id: "staff_v2_links", type: "quick-links", size: "full", config: {} },
 ];
 
