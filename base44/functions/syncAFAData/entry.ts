@@ -591,8 +591,10 @@ export default async function(req) {
     deletedDuplicates += await removeDuplicateRows(service.Standings, existingStandings, standingKey);
     deletedDuplicates += await removeDuplicateRows(service.UpcomingMatch, existingFixtures, fixtureKey, pickCanonicalFixture);
 
-    const cleanExistingStandings = uniqueByKey(existingStandings, standingKey);
-    const cleanExistingFixtures = uniqueByKey(existingFixtures, fixtureKey);
+    const [cleanExistingStandings, cleanExistingFixtures] = await Promise.all([
+      service.Standings.filter({ season: SEASON }, '-updated_date', 3000).catch(() => []),
+      service.UpcomingMatch.filter({ season: SEASON }, '-updated_date', 6000).catch(() => []),
+    ]);
     const standingByKey = new Map(cleanExistingStandings.map((row) => [standingKey(row), row]));
     const standingCreates = [];
     const standingUpdates = [];
