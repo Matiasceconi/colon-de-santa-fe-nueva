@@ -32,10 +32,7 @@ function sourceKind(event: any) {
   if (event.training_session_id) return 'training_session';
   if (event.match_id || event.sync_source === 'matches') return 'match_report';
   if (event.sync_source === 'competition_integration') return 'competition_integration';
-  if (event.created_by_ai) {
-    const oldApp = String(event.source_file || '').includes('6a3bc03033558cd65ec27f53');
-    return oldApp ? 'legacy_import' : 'ai_import';
-  }
+  if (event.created_by_ai) return 'ai_import';
   return 'manual';
 }
 
@@ -132,9 +129,9 @@ export default async function(req: Request) {
       if (event.match_id && !matchById.has(event.match_id)) notes.push('El vínculo con Partido apunta a un registro que ya no existe.');
       if (event.time && event.start_time && event.time !== event.start_time) notes.push('time y start_time difieren; start_time se toma como horario canónico.');
       if (!String(event.event_type || event.type || '').trim()) notes.push('El evento no tenía tipo informado y fue clasificado automáticamente.');
-      if (String(event.source_file || '').includes('6a3bc03033558cd65ec27f53')) {
+      if (event.source_kind === 'legacy_import') {
         quality = 'legacy';
-        notes.push('Origen histórico de la aplicación anterior; se conserva solo como respaldo.');
+        notes.push('Evento marcado explícitamente como importación histórica.');
         legacy++;
       }
       if (notes.length && quality !== 'legacy') quality = 'review';
