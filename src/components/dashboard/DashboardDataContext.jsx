@@ -413,6 +413,7 @@ export function DashboardDataProvider({ children }) {
     internalCompetitions,
     // Staff
     trainingSessions, players, playersByStatus, squadStatusTotal, todaySessionPlayers, activeInjuries, birthdayPlayers,
+    dayEvents, todayCalendarEvents, tomorrowCalendarEvents, tomorrowKey, wellnessSummary,
     matchReports, matchCallups, matchDayContext, todayKey, timezone,
   };
 
