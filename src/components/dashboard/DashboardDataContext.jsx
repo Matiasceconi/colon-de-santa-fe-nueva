@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from "
 import { base44 } from "@/api/base44Client";
 import { useCompetitionCenterData, getFixtureIsHome, getFixtureRival } from "@/components/afa/useCompetitionCenterData";
 import { useWorkspace } from "@/lib/WorkspaceContext";
+import { buildCalendarView } from "@/components/schedule/calendarSourceAdapter";
 
 const DashboardDataContext = createContext({});
 export const useDashboardData = () => useContext(DashboardDataContext);
@@ -22,6 +23,12 @@ function matchDateValue(match) {
 function previousDateKey(dateKey) {
   const parsed = new Date(`${dateKey}T12:00:00Z`);
   parsed.setUTCDate(parsed.getUTCDate() - 1);
+  return parsed.toISOString().slice(0, 10);
+}
+
+function nextDateKey(dateKey) {
+  const parsed = new Date(`${dateKey}T12:00:00Z`);
+  parsed.setUTCDate(parsed.getUTCDate() + 1);
   return parsed.toISOString().slice(0, 10);
 }
 
@@ -61,6 +68,8 @@ export function DashboardDataProvider({ children }) {
   const [memberships, setMemberships] = useState([]);
   const [matchReports, setMatchReports] = useState([]);
   const [matchCallups, setMatchCallups] = useState([]);
+  const [dayEvents, setDayEvents] = useState([]);
+  const [wellnessResponses, setWellnessResponses] = useState([]);
   const [staffLoading, setStaffLoading] = useState(true);
 
   const timezone = institutionProfile?.timezone || "America/Argentina/Buenos_Aires";
@@ -120,14 +129,17 @@ export function DashboardDataProvider({ children }) {
       setStaffLoading(true);
       try {
         const today = todayKey;
-        const [sessions, allPlayers, medStatus, allSessionPlayers, squadMemberships, recentMatches, callups] = await Promise.all([
-          base44.entities.TrainingSession.filter({ date: { $gte: today } }, "date", 20).catch(() => []),
+        const tomorrow = nextDateKey(today);
+        const [sessions, allPlayers, medStatus, allSessionPlayers, squadMemberships, recentMatches, callups, calendarEvents, wellness] = await Promise.all([
+          base44.entities.TrainingSession.filter({ date: { $gte: today } }, "date", 40).catch(() => []),
           base44.entities.Player.list("first_name", 500).catch(() => []),
           base44.entities.MedicalCurrentStatus.list("-updated_at", 200).catch(() => []),
           base44.entities.SessionPlayer.list("-created_date", 1000).catch(() => []),
           base44.entities.SquadMembership.list("-effective_from", 1000).catch(() => []),
           base44.entities.MatchReport.list("-date", 250).catch(() => []),
           base44.entities.MatchCallup.list("-updated_date", 2500).catch(() => []),
+          base44.entities.DayEvent.filter({ date: { $gte: today, $lte: tomorrow } }, "date", 300).catch(() => []),
+          base44.entities.WellnessResponse.filter({ response_date: today }, "-created_date", 500).catch(() => []),
         ]);
         setTrainingSessions(sessions || []);
         setPlayers(allPlayers || []);
@@ -136,6 +148,8 @@ export function DashboardDataProvider({ children }) {
         setMemberships(squadMemberships || []);
         setMatchReports(recentMatches || []);
         setMatchCallups(callups || []);
+        setDayEvents(calendarEvents || []);
+        setWellnessResponses(wellness || []);
       } catch (e) {
         console.error("staff data", e);
       } finally {
