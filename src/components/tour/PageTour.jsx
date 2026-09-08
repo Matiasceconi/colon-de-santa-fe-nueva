@@ -23,7 +23,7 @@ export default function PageTour({ pageKey, steps, autoStart = false, onStepChan
 
   const start = useCallback(() => { setIndex(0); setActive(true); }, []);
 
-  // Auto-start on first visit
+  // Auto-start solo cuando una página lo solicita explícitamente.
   useEffect(() => {
     if (autoStart && !localStorage.getItem(completedKey)) {
       const t = setTimeout(start, 900);
@@ -31,7 +31,7 @@ export default function PageTour({ pageKey, steps, autoStart = false, onStepChan
     }
   }, [autoStart, completedKey, start]);
 
-  // Listen for global trigger (from the sidebar "Ver tutorial" button)
+  // Listen for global trigger from the "Guía dinámica" button.
   useEffect(() => {
     const handler = () => start();
     window.addEventListener(START_EVENT, handler);
@@ -149,12 +149,12 @@ export default function PageTour({ pageKey, steps, autoStart = false, onStepChan
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/25 bg-blue-500/10 text-blue-400 font-black text-sm">
             {index + 1}
           </div>
-          <button onClick={skip} className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-white" aria-label="Cerrar tutorial">
+          <button onClick={skip} className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-white" aria-label="Cerrar guía dinámica">
             <X size={16} />
           </button>
         </div>
         <p className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-blue-400">
-          Tutorial · Paso {index + 1} de {steps.length}
+          Guía dinámica · Paso {index + 1} de {steps.length}
         </p>
         <h2 className="mt-1.5 text-base font-black text-white leading-tight">{step.title}</h2>
         <p className="mt-2 text-sm leading-6 text-zinc-400">{step.text}</p>
