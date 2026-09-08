@@ -4,13 +4,14 @@ import {
   LastResultsWidget, CalendarWidget, FixturesWidget, TodayAlertsWidget, NextYouthWidget, YouthStandingsWidget
 } from "@/components/dashboard/widgets/ClubWidgets";
 import {
-  TrainingTodayWidget, SquadStatusWidget, InjuriesWidget, QuickLinksWidget, SessionDayMapWidget
+  TrainingTodayWidget, SquadStatusWidget, InjuriesWidget, QuickLinksWidget, SessionDayMapWidget,
+  StaffDayScheduleWidget, WellnessPriorityWidget,
 } from "@/components/dashboard/widgets/StaffWidgets";
 import { NoteWidget, CounterWidget } from "@/components/dashboard/widgets/CustomWidgets";
 import BirthdayWidget from "@/components/dashboard/widgets/BirthdayWidget";
 import {
   CompetitionOverviewWidget, CompetitionNextMatchWidget, YouthRoundWidget,
-  CompetitionTableSnapshotWidget, CompetitionAgendaWidget, StaffDayCommandWidget,
+  CompetitionTableSnapshotWidget, CompetitionAgendaWidget,
 } from "@/components/dashboard/widgets/CompetitionWidgets";
 
 const WIDGET_COMPONENTS = {
@@ -36,7 +37,8 @@ const WIDGET_COMPONENTS = {
   "competition-youth-round": YouthRoundWidget,
   "competition-table": CompetitionTableSnapshotWidget,
   "competition-agenda": CompetitionAgendaWidget,
-  "staff-day-command": StaffDayCommandWidget,
+  "staff-day-command": StaffDayScheduleWidget,
+  "wellness-priority": WellnessPriorityWidget,
   "session-day-map": SessionDayMapWidget,
 };
 
