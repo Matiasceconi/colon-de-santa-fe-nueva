@@ -207,6 +207,46 @@ export function DashboardDataProvider({ children }) {
     [players, activeSquad?.id]
   );
 
+  const calendarViewEvents = useMemo(() => {
+    const inActiveSquad = (row) => !activeSquad?.id || !row?.squad_id || row.squad_id === activeSquad.id;
+    return buildCalendarView({
+      dayEvents: (dayEvents || []).filter(inActiveSquad),
+      sessions: (trainingSessions || []).filter(inActiveSquad),
+      matches: (matchReports || []).filter(inActiveSquad),
+    }).events;
+  }, [dayEvents, trainingSessions, matchReports, activeSquad?.id]);
+
+  const tomorrowKey = useMemo(() => nextDateKey(todayKey), [todayKey]);
+  const todayCalendarEvents = useMemo(() => calendarViewEvents.filter((event) => event.date === todayKey), [calendarViewEvents, todayKey]);
+  const tomorrowCalendarEvents = useMemo(() => calendarViewEvents.filter((event) => event.date === tomorrowKey), [calendarViewEvents, tomorrowKey]);
+
+  const wellnessSummary = useMemo(() => {
+    const severity = { red: 4, orange: 3, yellow: 2, green: 1 };
+    const latest = new Map();
+    (wellnessResponses || []).forEach((response) => {
+      const player = playerMap[response.player_id];
+      if (!player || (activeSquad?.id && response.squad_id && response.squad_id !== activeSquad.id)) return;
+      if (activeSquad?.id && !response.squad_id && player.squad_id && player.squad_id !== activeSquad.id) return;
+      const current = latest.get(response.player_id);
+      const stamp = String(response.created_date || response.updated_date || "");
+      const currentStamp = String(current?.created_date || current?.updated_date || "");
+      if (!current || stamp >= currentStamp) latest.set(response.player_id, response);
+    });
+    const responses = [...latest.values()].map((response) => {
+      const player = playerMap[response.player_id] || {};
+      return {
+        ...response,
+        player,
+        player_name: player.full_name || [player.first_name, player.last_name].filter(Boolean).join(" ") || response.player_name || "Jugador",
+        photo_url: player.photo_url || "",
+      };
+    }).sort((a, b) => (severity[b.alert_level] || 0) - (severity[a.alert_level] || 0));
+    const alerts = responses.filter((response) => ["red", "orange", "yellow"].includes(response.alert_level));
+    const answeredIds = new Set(responses.map((response) => response.player_id));
+    const missing = playersForActiveSquad.filter((player) => !answeredIds.has(player.id));
+    return { responses, alerts, missing, answered: responses.length, total: playersForActiveSquad.length };
+  }, [wellnessResponses, playerMap, playersForActiveSquad, activeSquad?.id]);
+
   const todaySessionPlayers = useMemo(() => {
     const today = todayKey;
     const todaySessionIds = new Set(
