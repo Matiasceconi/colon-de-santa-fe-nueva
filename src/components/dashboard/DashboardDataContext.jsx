@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useCompetitionCenterData, getFixtureIsHome, getFixtureRival } from "@/components/afa/useCompetitionCenterData";
 import { useWorkspace } from "@/lib/WorkspaceContext";
@@ -124,40 +124,39 @@ export function DashboardDataProvider({ children }) {
   }, [internalCompetitions]);
 
   // Load staff data
-  useEffect(() => {
-    async function fetchStaffData() {
-      setStaffLoading(true);
-      try {
-        const today = todayKey;
-        const tomorrow = nextDateKey(today);
-        const [sessions, allPlayers, medStatus, allSessionPlayers, squadMemberships, recentMatches, callups, calendarEvents, wellness] = await Promise.all([
-          base44.entities.TrainingSession.filter({ date: { $gte: today } }, "date", 40).catch(() => []),
-          base44.entities.Player.list("first_name", 500).catch(() => []),
-          base44.entities.MedicalCurrentStatus.list("-updated_at", 200).catch(() => []),
-          base44.entities.SessionPlayer.list("-created_date", 1000).catch(() => []),
-          base44.entities.SquadMembership.list("-effective_from", 1000).catch(() => []),
-          base44.entities.MatchReport.list("-date", 250).catch(() => []),
-          base44.entities.MatchCallup.list("-updated_date", 2500).catch(() => []),
-          base44.entities.DayEvent.filter({ date: { $gte: today, $lte: tomorrow } }, "date", 300).catch(() => []),
-          base44.entities.WellnessResponse.filter({ response_date: today }, "-created_date", 500).catch(() => []),
-        ]);
-        setTrainingSessions(sessions || []);
-        setPlayers(allPlayers || []);
-        setMedicalStatuses(medStatus || []);
-        setSessionPlayers(allSessionPlayers || []);
-        setMemberships(squadMemberships || []);
-        setMatchReports(recentMatches || []);
-        setMatchCallups(callups || []);
-        setDayEvents(calendarEvents || []);
-        setWellnessResponses(wellness || []);
-      } catch (e) {
-        console.error("staff data", e);
-      } finally {
-        setStaffLoading(false);
-      }
+  const fetchStaffData = useCallback(async () => {
+    setStaffLoading(true);
+    try {
+      const today = todayKey;
+      const tomorrow = nextDateKey(today);
+      const [sessions, allPlayers, medStatus, allSessionPlayers, squadMemberships, recentMatches, callups, calendarEvents, wellness] = await Promise.all([
+        base44.entities.TrainingSession.filter({ date: { $gte: today } }, "date", 40).catch(() => []),
+        base44.entities.Player.list("first_name", 500).catch(() => []),
+        base44.entities.MedicalCurrentStatus.list("-updated_at", 200).catch(() => []),
+        base44.entities.SessionPlayer.list("-created_date", 1000).catch(() => []),
+        base44.entities.SquadMembership.list("-effective_from", 1000).catch(() => []),
+        base44.entities.MatchReport.list("-date", 250).catch(() => []),
+        base44.entities.MatchCallup.list("-updated_date", 2500).catch(() => []),
+        base44.entities.DayEvent.filter({ date: { $gte: today, $lte: tomorrow } }, "date", 300).catch(() => []),
+        base44.entities.WellnessResponse.filter({ response_date: today }, "-created_date", 500).catch(() => []),
+      ]);
+      setTrainingSessions(sessions || []);
+      setPlayers(allPlayers || []);
+      setMedicalStatuses(medStatus || []);
+      setSessionPlayers(allSessionPlayers || []);
+      setMemberships(squadMemberships || []);
+      setMatchReports(recentMatches || []);
+      setMatchCallups(callups || []);
+      setDayEvents(calendarEvents || []);
+      setWellnessResponses(wellness || []);
+    } catch (e) {
+      console.error("staff data", e);
+    } finally {
+      setStaffLoading(false);
     }
-    fetchStaffData();
   }, [todayKey]);
+
+  useEffect(() => { fetchStaffData(); }, [fetchStaffData]);
 
   const primeraCompId = useMemo(() => internalCompetitions.find((c) => c.division === "primera" && c.provider_competition_id)?.provider_competition_id || null, [internalCompetitions]);
   const reservaCompId = useMemo(() => internalCompetitions.find((c) => c.division === "reserva" && c.provider_competition_id)?.provider_competition_id || null, [internalCompetitions]);
