@@ -16,6 +16,7 @@ export default function TournamentTable() {
   const [standings, setStandings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("General");
+  const clubPrimary = clubBrand?.colors?.primary || "#DC2626";
 
   useEffect(() => {
     async function load() {
@@ -57,11 +58,8 @@ export default function TournamentTable() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === tab
-                ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                : "text-zinc-400 hover:text-white"
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab ? "border" : "text-zinc-400 hover:text-white"}`}
+            style={activeTab === tab ? { backgroundColor: `${clubPrimary}22`, color: clubPrimary, borderColor: `${clubPrimary}55` } : undefined}
           >
             {tab}
           </button>
@@ -94,9 +92,10 @@ export default function TournamentTable() {
             return (
               <tr
                 key={team.id}
-                className={`border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors ${isHighlighted ? "bg-yellow-500/10" : ""}`}
+                className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors"
+                style={isHighlighted ? { backgroundColor: `${clubPrimary}18` } : undefined}
               >
-                <td className={`py-3 px-3 font-bold ${isHighlighted ? "text-yellow-400" : "text-white"}`}>
+                <td className="py-3 px-3 font-bold text-white" style={isHighlighted ? { color: clubPrimary } : undefined}>
                   {team.position}
                 </td>
                 <td className={`py-3 px-3 font-semibold flex items-center gap-2 ${isHighlighted ? "text-white" : "text-white"}`}>
@@ -116,7 +115,7 @@ export default function TournamentTable() {
                 <td className={`py-3 px-2 text-center font-semibold ${diff > 0 ? "text-emerald-400" : diff < 0 ? "text-red-400" : "text-zinc-400"}`}>
                   {diff > 0 ? "+" : ""}{diff}
                 </td>
-                <td className={`py-3 px-3 font-bold text-right ${isHighlighted ? "text-yellow-300 text-base" : "text-white"}`}>
+                <td className={`py-3 px-3 font-bold text-right ${isHighlighted ? "text-base" : "text-white"}`} style={isHighlighted ? { color: clubPrimary } : undefined}>
                   {team.points}
                 </td>
               </tr>
