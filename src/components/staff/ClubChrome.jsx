@@ -148,7 +148,7 @@ export function ClubTopHeader() {
             className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-zinc-200 transition hover:bg-white/10"
           >
             <BookOpen size={15} style={{ color: "var(--club-accent)" }} />
-            <span className="hidden sm:inline">Tutorial</span>
+            <span className="hidden sm:inline">Guía dinámica</span>
           </button>
           <button
             type="button"
