@@ -9,7 +9,7 @@ const COLOR_DOT = {
   red: "bg-red-500", purple: "bg-violet-500", pink: "bg-pink-500", cyan: "bg-cyan-500",
 };
 
-export default function QuickEventModal({ open, onClose, onSaved, event, date, squadId, squadName }) {
+export default function QuickEventModal({ open, onClose, onSaved, event, date, squadId, squadName, seasonId = "" }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
@@ -23,12 +23,20 @@ export default function QuickEventModal({ open, onClose, onSaved, event, date, s
   async function handleSave() {
     if (!form.title) return;
     setSaving(true);
+    const canonicalType = form.type || form.event_type || "Otro";
+    const canonicalTime = form.time || form.start_time || "";
     const payload = {
       ...form,
       date: event ? (event.date || date) : date,
+      time: canonicalTime,
+      start_time: canonicalTime,
+      type: canonicalType,
+      event_type: canonicalType,
       duration_minutes: form.duration_minutes ? Number(form.duration_minutes) : undefined,
       squad_id: squadId,
       squad_name: squadName,
+      season_id: seasonId || event?.season_id || "",
+      source_kind: event?.source_kind || "manual",
     };
     if (event?.id) {
       await base44.entities.DayEvent.update(event.id, payload);
