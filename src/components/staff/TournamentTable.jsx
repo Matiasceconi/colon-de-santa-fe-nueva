@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { useWorkspace } from "@/lib/WorkspaceContext";
+
+function normalizeClubName(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
 
 export default function TournamentTable() {
+  const { clubBrand, institutionProfile } = useWorkspace();
   const [standings, setStandings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("General");
@@ -73,9 +84,13 @@ export default function TournamentTable() {
           </tr>
         </thead>
         <tbody>
-          {filteredStandings.map((team, idx) => {
+          {filteredStandings.map((team) => {
             const diff = team.goals_for - team.goals_against;
-            const isHighlighted = team.team_name.toLowerCase().includes("defensa") && team.team_name.toLowerCase().includes("justicia");
+            const teamName = normalizeClubName(team.team_name);
+            const ownNames = [institutionProfile?.official_name, institutionProfile?.short_name, clubBrand?.name, clubBrand?.shortName]
+              .map(normalizeClubName)
+              .filter(Boolean);
+            const isHighlighted = ownNames.some((name) => teamName === name || (name.length >= 4 && teamName.includes(name)) || (teamName.length >= 4 && name.includes(teamName)));
             return (
               <tr
                 key={team.id}
