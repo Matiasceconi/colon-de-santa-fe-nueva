@@ -2,7 +2,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk';
 
 const SYNC_KEY = 'afa_competitions';
 const DEFAULT_STALE_MINUTES = 45;
-const MATCHDAY_STALE_MINUTES = 15;
+const MATCHDAY_STALE_MINUTES = 5;
+const SYNC_LOCK_MINUTES = 4;
 
 function minutesSince(value) {
   if (!value) return Infinity;
@@ -40,6 +41,16 @@ export default async function(req) {
     const states = await service.CompetitionSyncState.filter({ key: SYNC_KEY }, '-updated_date', 1).catch(() => []);
     syncState = states?.[0] || null;
     const staleMinutes = matchDay ? MATCHDAY_STALE_MINUTES : DEFAULT_STALE_MINUTES;
+    if (!force && syncState?.status === 'syncing' && minutesSince(syncState.last_started_at) < SYNC_LOCK_MINUTES) {
+      return Response.json({
+        success: true,
+        unchanged: true,
+        syncing: true,
+        season: SEASON,
+        message: 'Ya hay una sincronización de competencias en curso.',
+        last_started_at: syncState.last_started_at,
+      });
+    }
     if (!force && syncState?.status === 'success' && minutesSince(syncState.last_success_at) < staleMinutes) {
       return Response.json({
         success: true,
@@ -101,12 +112,64 @@ export default async function(req) {
         .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
     }
 
+    function normalizeFixtureTeam(value) {
+      return normalizeKey(value)
+        .replace(/\breserva\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
     function standingKey(row) {
       return [row.season, normalizeKey(row.competition), normalizeKey(row.group), normalizeKey(row.team)].join('::');
     }
 
     function fixtureKey(row) {
-      return [row.season, normalizeKey(row.competition), row.matchDate, normalizeKey(row.homeTeam), normalizeKey(row.awayTeam)].join('::');
+      return [row.season, normalizeKey(row.competition), row.matchDate, normalizeFixtureTeam(row.homeTeam), normalizeFixtureTeam(row.awayTeam)].join('::');
+    }
+
+    function uniqueByKey(rows, keyFn) {
+      const map = new Map();
+      for (const row of rows) {
+        const key = keyFn(row);
+        const current = map.get(key);
+        if (!current) {
+          map.set(key, row);
+          continue;
+        }
+        const currentOfficial = current.source === 'lpf_programacion_oficial' || current.source === 'manual';
+        const rowOfficial = row.source === 'lpf_programacion_oficial' || row.source === 'manual';
+        if (rowOfficial && !currentOfficial) map.set(key, { ...current, ...row });
+        else if (!currentOfficial) map.set(key, { ...current, ...row });
+      }
+      return [...map.values()];
+    }
+
+    function pickCanonicalFixture(rows) {
+      return [...rows].sort((a, b) => {
+        const sourceScore = (row) => row.source === 'manual' ? 3 : row.source === 'lpf_programacion_oficial' ? 2 : 1;
+        const completeness = (row) => [row.matchTime, row.venue, row.round, row.homeLogo, row.awayLogo, row.homeScore != null && row.awayScore != null].filter(Boolean).length;
+        return sourceScore(b) - sourceScore(a) || completeness(b) - completeness(a) || String(b.updated_date || '').localeCompare(String(a.updated_date || ''));
+      })[0];
+    }
+
+    async function removeDuplicateRows(entity, rows, keyFn, picker = (group) => group[0]) {
+      const groups = new Map();
+      for (const row of rows) {
+        const key = keyFn(row);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(row);
+      }
+      let deleted = 0;
+      for (const group of groups.values()) {
+        if (group.length < 2) continue;
+        const keep = picker(group);
+        for (const duplicate of group) {
+          if (duplicate.id === keep.id) continue;
+          await entity.delete(duplicate.id).catch(() => null);
+          deleted += 1;
+        }
+      }
+      return deleted;
     }
 
     function changed(current, next, fields) {
