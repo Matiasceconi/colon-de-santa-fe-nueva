@@ -299,7 +299,7 @@ export function buildImportPlan(simulation, context, policy, conflictActions = {
       match_id: match.id,
       player_id: player.id,
       squad_id: match.squad_id || "",
-      club_id: match.club_id || "defensa-y-justicia",
+      ...(match.club_id ? { club_id: match.club_id } : {}),
       status: "convocado",
       callup_status: "convocado",
       callup_key: `${match.id}:${player.id}`,
