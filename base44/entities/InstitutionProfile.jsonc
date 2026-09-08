@@ -12,7 +12,7 @@
     },
     "abbreviation": {
       "type": "string",
-      "description": "Abreviatura (ej: DYJ)"
+      "description": "Abreviatura (ej: COL)"
     },
     "shield_url": {
       "type": "string",
