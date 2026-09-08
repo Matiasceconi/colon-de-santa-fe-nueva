@@ -208,6 +208,7 @@ export default function DayScheduleAgenda({ todayEvents = [], tomorrowEvents = [
         date={displayDate}
         squadId={activeSquadId}
         squadName={activeSquad?.name || ""}
+        seasonId={activeSquad?.season || ""}
       />
     </div>
   );
