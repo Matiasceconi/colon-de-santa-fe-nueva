@@ -39,7 +39,7 @@ function PlayerAvatar({ row }) {
   return <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-xs font-black text-zinc-400">{initials}</span>;
 }
 
-export function WellnessPriorityWidget({ widget }) {
+export function WellnessPriorityWidget({ widget, onConfigChange }) {
   const { wellnessSummary, staffLoading, activeSquad } = useDashboardData();
   const threshold = widget?.config?.threshold || "orange";
   const limit = Math.max(3, Math.min(12, Number(widget?.config?.limit || 6)));
@@ -60,9 +60,21 @@ export function WellnessPriorityWidget({ widget }) {
             <p className="mt-0.5 truncate text-[11px] text-zinc-500">{activeSquad?.name || "Plantel activo"} · alertas del día</p>
           </div>
         </div>
-        <Link to="/performance/internal-load" className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white">
-          Abrir <ExternalLink size={11} />
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <select
+            value={threshold}
+            onChange={(event) => onConfigChange?.({ ...widget?.config, threshold: event.target.value })}
+            className="rounded-lg border border-white/10 bg-zinc-950 px-2 py-1.5 text-[10px] font-bold text-zinc-300 outline-none"
+            title="Nivel mínimo de alerta"
+          >
+            <option value="yellow">Amarilla+</option>
+            <option value="orange">Naranja+</option>
+            <option value="red">Sólo roja</option>
+          </select>
+          <Link to="/performance/internal-load" className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white">
+            Abrir <ExternalLink size={11} />
+          </Link>
+        </div>
       </div>
 
       <div className="p-4">
