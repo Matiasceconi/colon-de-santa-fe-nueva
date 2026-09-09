@@ -1,0 +1,162 @@
+{
+  "name": "NutritionPlan",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "squad_id": {
+      "type": "string"
+    },
+    "season_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "completed"
+      ],
+      "default": "active"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "objective": {
+      "type": "string",
+      "enum": [
+        "maintain",
+        "muscle_gain",
+        "fat_reduction",
+        "recovery",
+        "competition",
+        "rehab",
+        "education",
+        "other"
+      ],
+      "default": "maintain"
+    },
+    "objective_notes": {
+      "type": "string"
+    },
+    "energy_kcal": {
+      "type": "number"
+    },
+    "carbs_g_kg": {
+      "type": "number"
+    },
+    "protein_g_kg": {
+      "type": "number"
+    },
+    "fat_g_kg": {
+      "type": "number"
+    },
+    "hydration_target_ml": {
+      "type": "number"
+    },
+    "breakfast_strategy": {
+      "type": "string"
+    },
+    "lunch_strategy": {
+      "type": "string"
+    },
+    "snack_strategy": {
+      "type": "string"
+    },
+    "dinner_strategy": {
+      "type": "string"
+    },
+    "pre_training_strategy": {
+      "type": "string"
+    },
+    "during_training_strategy": {
+      "type": "string"
+    },
+    "post_training_strategy": {
+      "type": "string"
+    },
+    "md_minus_1_strategy": {
+      "type": "string"
+    },
+    "match_day_strategy": {
+      "type": "string"
+    },
+    "md_plus_1_strategy": {
+      "type": "string"
+    },
+    "supplements": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    },
+    "restrictions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "notes": {
+      "type": "string"
+    },
+    "private_notes": {
+      "type": "string"
+    },
+    "responsible_name": {
+      "type": "string"
+    },
+    "created_by_name": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "player_id",
+    "start_date",
+    "objective"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
