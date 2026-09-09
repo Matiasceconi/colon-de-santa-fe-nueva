@@ -112,11 +112,19 @@ export default async function(req) {
         .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
     }
 
+    const fixtureTeamAliases = new Map([
+      ['colon de santa fe', 'colon'],
+      ['colon santa fe', 'colon'],
+      ['union de santa fe', 'union'],
+      ['union santa fe', 'union'],
+    ]);
+
     function normalizeFixtureTeam(value) {
-      return normalizeKey(value)
-        .replace(/\breserva\b/g, ' ')
+      const normalized = normalizeKey(value)
+        .replace(/\breserva\b|\bproyeccion\b/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+      return fixtureTeamAliases.get(normalized) || normalized;
     }
 
     function standingKey(row) {
