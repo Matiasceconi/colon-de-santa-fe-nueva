@@ -5,57 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import * as XLSX from "xlsx";
+import {
+  PLAYER_COLUMNS,
+  playerColumnLabels,
+  playerColumnWidths,
+  playerExampleRowArray,
+  detectPlayerColumns,
+  normalizeSpreadsheetText,
+  writeControlAutoFormulas,
+  extendSheetRange,
+} from "@/lib/playerSpreadsheet";
 
-
-function normalizeText(value) {
-  return String(value || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+const TEMPLATE_DATA_ROWS = 300; // filas con fórmula de "Control automático" precargada
 
 function buildHeaderRows(clubName = "Club") {
   return [
     [`${String(clubName || "Club").toUpperCase()} · IMPORTACIÓN DE JUGADORES`],
     ["Plantilla oficial para cargar jugadores en el software del club"],
     ["Una fila por jugador. No cambiar los nombres de las columnas. Los campos con * son obligatorios. El DNI puede quedar vacío, pero el portal del jugador no se habilitará hasta completarlo."],
-    ["Formato recomendado: DNI sin puntos ni espacios · Fecha: dd/mm/aaaa · No incluir talla, peso ni minutos"],
+    ["Formato recomendado: DNI sin puntos ni espacios · Fecha: dd/mm/aaaa · Número de camiseta solo dígitos"],
     ["Completá desde la fila 7. Si necesitás ayuda, abrí la hoja “Instrucciones”."],
   ];
 }
-
-const COLUMNS = [
-  "Plantel / Categoría *",
-  "Tipo de documento *",
-  "Nro. documento",
-  "Apellido *",
-  "Nombre *",
-  "Fecha de nacimiento *",
-  "Nacionalidad",
-  "Zona de residencia",
-  "Tipo de pensión",
-  "Perfil / pierna hábil *",
-  "Posición *",
-  "Control automático",
-];
-
-const EXAMPLE_ROW = [
-  "Reserva",
-  "DNI",
-  40123456,
-  "Pérez",
-  "Juan",
-  "15/03/2005",
-  "Argentina",
-  "INTERIOR",
-  "Sin pensión",
-  "Diestro",
-  "Mediocampista Central",
-  "",
-];
 
 function buildInstructionsSheet(clubName = "Club") {
   return [
@@ -64,23 +35,32 @@ function buildInstructionsSheet(clubName = "Club") {
     ["Paso", "Acción", "Qué hacer"],
     ["1", "Descargá la plantilla", "Usá siempre el archivo generado desde la página para conservar las columnas y validaciones correctas."],
     ["2", "Completá una fila por jugador", "No combines celdas, no cambies encabezados y no agregues títulos dentro de la tabla."],
-    ["3", "Revisá el control automático", "Verde: listo. Amarillo: se importa sin portal. Rojo: hay un dato obligatorio o formato que corregir."],
+    ["3", "Revisá el control automático", "OK - Listo: se importa completo. Alerta - Sin DNI: se importa pero sin acceso al portal. Falta - Datos obligatorios: corregí esa fila antes de importar."],
     ["4", "Guardá como .xlsx", "No conviertas el archivo a PDF. El sistema leerá únicamente la hoja “Carga de jugadores”."],
     ["5", "Importá desde la página", "La página mostrará cuántos jugadores se crearon, actualizaron o quedaron con observaciones."],
     ["CAMPOS DE LA PLANILLA"],
     ["Campo", "Obligatorio", "Formato", "Uso"],
-    ["Plantel / Categoría", "Sí", "Elegir del desplegable", "Define en qué plantel quedará vinculado el jugador."],
+    ["Plantel / Categoría", "Sí", "Elegir del desplegable", "Define en qué plantel queda vinculado el jugador."],
     ["Tipo de documento", "Sí", "DNI, pasaporte, cédula u otro", "Permite identificar correctamente el documento cargado."],
-    ["Nro. documento", "No", "Solo números, sin puntos ni espacios", "Si falta, se importa con alerta y el portal queda bloqueado."],
+    ["Nro. documento", "No", "Solo números, sin puntos ni espacios", "Si falta, se importa con alerta y el portal queda bloqueado. Identifica al jugador en reimportaciones."],
     ["Apellido y Nombre", "Sí", "Texto", "Se guardan en campos separados para buscar y ordenar mejor."],
     ["Fecha de nacimiento", "Sí", "dd/mm/aaaa", "Debe ser una fecha válida de Excel."],
+    ["Lugar de nacimiento", "No", "Texto libre", "Ciudad/localidad de nacimiento."],
     ["Nacionalidad", "No", "Elegir del desplegable", "Puede completarse más adelante."],
     ["Zona de residencia", "No", "AMBA, INTERIOR o EXTERIOR", "Clasificación administrativa para logística, pensión y seguimiento."],
+    ["Provincia / Ciudad", "No", "Texto libre", "Solo aplica a jugadores del interior. Útil para logística de viajes."],
+    ["Domicilio completo", "No", "Texto libre", "Se usa cuando el jugador no vive en pensión del club."],
     ["Tipo de pensión", "No", "Sin pensión, interna o externa", "No modifica el acceso del jugador."],
+    ["Celular", "No", "Texto libre", "Contacto directo del jugador."],
     ["Perfil / pierna hábil", "Sí", "Diestro, zurdo o ambidiestro", "Dato deportivo básico para la ficha."],
     ["Posición", "Sí", "Elegir del desplegable", "Usar la posición principal del jugador."],
-    ["Control automático", "No editar", "Calculado", "La página no importará esta columna."],
-    ["IMPORTANTE: el player_id se genera automáticamente en la página. Talla, peso y minutos no forman parte de esta importación."],
+    ["Posición secundaria", "No", "Texto libre", "Posición alternativa, si la tiene."],
+    ["Número de camiseta", "No", "Solo números", "Se usa en convocatorias, planillas y reportes."],
+    ["Situación contractual", "No", "Con contrato, sin contrato o sin información", "Estado contractual confirmado del jugador."],
+    ["Estado", "No", "Disponible, Lesionado, Suspendido, etc.", "Si se deja vacío, un jugador nuevo se crea como Disponible; uno existente conserva el estado que ya tenía en el sistema (no se pisa)."],
+    ["Notas", "No", "Texto libre", "Observaciones internas sobre el jugador."],
+    ["Control automático", "No editar", "Calculado", "La página no importa esta columna — es solo una guía visual mientras completás."],
+    ["IMPORTANTE: el player_id se genera automáticamente en la página. Reimportar una planilla actualiza a los jugadores existentes (por DNI o nombre) sin resetear su estado ni darlos de baja."],
   ];
 }
 
@@ -107,26 +87,28 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
   );
 
   function downloadTemplate() {
+    const labels = playerColumnLabels();
     // Hoja "Carga de jugadores": filas de encabezado + fila de columnas + ejemplo
     const aoa = [
       ...buildHeaderRows(clubName),
-      COLUMNS,
-      EXAMPLE_ROW,
+      labels,
+      playerExampleRowArray(),
     ];
     const sheet = XLSX.utils.aoa_to_sheet(aoa);
-    sheet["!cols"] = [
-      { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 18 },
-      { wch: 20 }, { wch: 16 }, { wch: 20 }, { wch: 18 }, { wch: 20 },
-      { wch: 24 }, { wch: 18 },
-    ];
+    sheet["!cols"] = playerColumnWidths();
+    const lastCol = PLAYER_COLUMNS.length - 1;
     // Fusionar el título principal (fila 0) y los textos explicativos (filas 1-4) en una sola celda visible
     sheet["!merges"] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } },
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 11 } },
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 11 } },
-      { s: { r: 4, c: 0 }, e: { r: 4, c: 11 } },
+      { s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: lastCol } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: lastCol } },
+      { s: { r: 4, c: 0 }, e: { r: 4, c: lastCol } },
     ];
+    // Fila 7 (la primera de datos, con el ejemplo) en adelante: fórmula de
+    // control automático precargada para que se calcule sola al completar.
+    writeControlAutoFormulas(sheet, 7, 6 + TEMPLATE_DATA_ROWS);
+    extendSheetRange(sheet, 6 + TEMPLATE_DATA_ROWS, lastCol);
 
     const instructionsSheet = buildInstructionsSheet(clubName);
     const instrSheet = XLSX.utils.aoa_to_sheet(instructionsSheet);
@@ -134,7 +116,7 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
     instrSheet["!merges"] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
       { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } },
-      { s: { r: 7, c: 0 }, e: { r: 7, c: 3 } },
+      { s: { r: 8, c: 0 }, e: { r: 8, c: 3 } },
       { s: { r: instructionsSheet.length - 1, c: 0 }, e: { r: instructionsSheet.length - 1, c: 3 } },
     ];
 
@@ -171,8 +153,8 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
           // Encontrar la fila de encabezados: la que contiene "Apellido" y "Posición"
           let headerIndex = -1;
           for (let i = 0; i < Math.min(aoa.length, 15); i += 1) {
-            const cells = aoa[i].map((c) => normalizeText(c));
-            if (cells.some((c) => c.includes("apellido")) && cells.some((c) => c.includes("posicion"))) {
+            const cells = aoa[i].map((c) => normalizeSpreadsheetText(c));
+            if (cells.some((c) => c.includes("apellido")) && cells.some((c) => c.includes("posicion") && !c.includes("secundaria"))) {
               headerIndex = i;
               break;
             }
@@ -181,43 +163,22 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
             reject(new Error("No se encontró la fila de encabezados (Apellido / Posición)."));
             return;
           }
-          const headers = aoa[headerIndex].map((h) => normalizeText(h));
-          // Prefer exact match, then partial includes match
-          const col = (...keys) => {
-            for (const h of keys) {
-              const exact = headers.findIndex((header) => header === h);
-              if (exact !== -1) return exact;
-            }
-            for (const h of keys) {
-              const partial = headers.findIndex((header) => header.includes(h));
-              if (partial !== -1) return partial;
-            }
-            return -1;
-          };
-          const cSquad = col("plantel", "categoria", "division", "equipo");
-          const cDocType = col("tipo de documento", "tipo doc");
-          const cDni = col("nro de documento", "documento", "dni");
-          // Detect combined "Apellido y Nombres" column vs separate columns
-          const cCombined = headers.findIndex((h) => h.includes("apellido") && h.includes("nombre"));
-          const cLast = cCombined !== -1 ? -1 : col("apellido");
-          const cFirst = cCombined !== -1 ? -1 : col("nombre", "nombres");
-          const cBirth = col("fecha de nacimiento", "f de nacimiento", "f nac", "nacimiento", "f de nac");
-          const cNation = col("nacionalidad", "nac");
-          const cResidence = col("zona de residencia", "residencia", "residence");
-          const cHousing = col("tipo de pension", "pension");
-          const cLeg = col("perfil", "pierna", "habil");
-          const cPosition = col("posicion");
-          const cNumber = col("numero", "camiseta", "nro");
+          const headers = aoa[headerIndex];
+          const normalizedHeaders = headers.map((h) => normalizeSpreadsheetText(h));
+          const idx = detectPlayerColumns(headers);
+          // Detectar columna combinada "Apellido y Nombres" (planillas de otros clubes)
+          const cCombined = normalizedHeaders.findIndex((h) => h.includes("apellido") && h.includes("nombre"));
+          const useCombined = cCombined !== -1 && (idx.last_name === -1 || idx.first_name === -1 || idx.last_name === idx.first_name);
 
           const rows = [];
           for (let r = headerIndex + 1; r < aoa.length; r += 1) {
             const cells = aoa[r];
             if (!cells || cells.every((c) => c === "" || c === null)) continue;
-            const get = (idx) => (idx === -1 ? "" : cells[idx] ?? "");
+            const get = (colIdx) => (colIdx === undefined || colIdx === -1 ? "" : cells[colIdx] ?? "");
 
             let firstName = "";
             let lastName = "";
-            if (cCombined !== -1) {
+            if (useCombined) {
               // Combined "Apellido y Nombres" — split: first token = apellido, rest = nombre
               const full = String(get(cCombined)).trim();
               if (full) {
@@ -226,23 +187,33 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
                 firstName = parts.slice(1).join(" ") || "";
               }
             } else {
-              firstName = String(get(cFirst)).trim();
-              lastName = String(get(cLast)).trim();
+              firstName = String(get(idx.first_name)).trim();
+              lastName = String(get(idx.last_name)).trim();
             }
             if (!firstName && !lastName) continue;
+
             rows.push({
-              squad: String(get(cSquad)).trim(),
-              document_type: String(get(cDocType)).trim(),
-              dni: get(cDni),
+              squad: String(get(idx.squad)).trim(),
+              document_type: String(get(idx.document_type)).trim(),
+              dni: get(idx.dni),
               last_name: lastName,
               first_name: firstName,
-              birth_date: get(cBirth),
-              nationality: String(get(cNation)).trim(),
-              residence: String(get(cResidence)).trim(),
-              housing: String(get(cHousing)).trim(),
-              leg: String(get(cLeg)).trim(),
-              position: String(get(cPosition)).trim(),
-              jersey_number: get(cNumber) === "" ? undefined : get(cNumber),
+              birth_date: get(idx.birth_date),
+              birth_place: String(get(idx.birth_place)).trim(),
+              nationality: String(get(idx.nationality)).trim(),
+              residence_zone: String(get(idx.residence_zone)).trim(),
+              province: String(get(idx.province)).trim(),
+              city: String(get(idx.city)).trim(),
+              full_address: String(get(idx.full_address)).trim(),
+              housing_type: String(get(idx.housing_type)).trim(),
+              phone_number: String(get(idx.phone_number)).trim(),
+              leg: String(get(idx.leg)).trim(),
+              position: String(get(idx.position)).trim(),
+              secondary_position: String(get(idx.secondary_position)).trim(),
+              jersey_number: get(idx.jersey_number) === "" ? undefined : get(idx.jersey_number),
+              contract_status: String(get(idx.contract_status)).trim(),
+              status: String(get(idx.status)).trim(),
+              notes: String(get(idx.notes)).trim(),
             });
           }
           resolve(rows);
@@ -337,7 +308,7 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
 
             <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
               <p className="text-sm font-semibold text-zinc-200">Formato de la planilla</p>
-              <p className="mt-1 text-xs leading-5 text-zinc-500">Una fila por jugador. Son obligatorios Apellido, Nombre, Posición, Tipo de documento y Perfil/pierna hábil. La columna “Plantel / Categoría” asigna al jugador al plantel que coincida por nombre (ej: Reserva).</p>
+              <p className="mt-1 text-xs leading-5 text-zinc-500">Una fila por jugador, con los mismos {PLAYER_COLUMNS.length - 1} campos que podés cargar y exportar desde la ficha del jugador (documento, residencia, contacto, contrato, número de camiseta, notas, etc.). Son obligatorios Apellido, Nombre, Posición, Tipo de documento y Perfil/pierna hábil. Reimportar actualiza a los jugadores existentes sin resetear su estado.</p>
               <button type="button" onClick={downloadTemplate} className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-cyan-400 hover:text-cyan-300"><Download size={14} /> Descargar plantilla Excel</button>
             </div>
 
@@ -367,8 +338,10 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
                         <th className="px-2 py-1.5 font-semibold">Plantel</th>
                         <th className="px-2 py-1.5 font-semibold">Apellido</th>
                         <th className="px-2 py-1.5 font-semibold">Nombre</th>
+                        <th className="px-2 py-1.5 font-semibold">DNI</th>
                         <th className="px-2 py-1.5 font-semibold">Posición</th>
                         <th className="px-2 py-1.5 font-semibold">Pierna</th>
+                        <th className="px-2 py-1.5 font-semibold">Estado</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -377,14 +350,22 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
                           <td className="px-2 py-1.5 text-zinc-300">{row.squad || "—"}</td>
                           <td className="px-2 py-1.5 text-white">{row.last_name || "—"}</td>
                           <td className="px-2 py-1.5 text-white">{row.first_name || "—"}</td>
+                          <td className="px-2 py-1.5 text-zinc-300">{row.dni ? String(row.dni) : "—"}</td>
                           <td className="px-2 py-1.5 text-zinc-300">{row.position || "—"}</td>
                           <td className="px-2 py-1.5 text-zinc-300">{row.leg || "—"}</td>
+                          <td className="px-2 py-1.5 text-zinc-300">{row.status || "—"}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 {parsedRows.length > 50 && <p className="text-[11px] text-zinc-500">…y {parsedRows.length - 50} filas más</p>}
+                {parsedRows.some((row) => !row.dni) && (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3">
+                    <AlertCircle size={15} className="mt-0.5 shrink-0 text-amber-400" />
+                    <p className="text-[11px] text-amber-200">{parsedRows.filter((row) => !row.dni).length} fila(s) sin DNI — esos jugadores se importan igual, pero sin acceso al portal hasta cargarlo.</p>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button onClick={confirmImport} disabled={uploading} className="flex-1 bg-cyan-600 text-white hover:bg-cyan-500">
                     {uploading ? "Importando..." : `Confirmar importación de ${parsedRows.length} jugadores`}
