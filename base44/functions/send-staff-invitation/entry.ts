@@ -37,6 +37,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: "El Administrador General protegido no necesita un aviso de acceso de staff." }, { status: 409 });
     }
 
+    const firstLoginCompleted = Boolean(access.last_seen);
+    const isFirstAccess = !firstLoginCompleted;
+
     let profiles = [];
     try { profiles = await base44.asServiceRole.entities.InstitutionProfile.filter({ active: true }, "-updated_date", 1); } catch { /* Link relativo disponible. */ }
     const configuredUrl = String(profiles[0]?.application_url || "").trim();
@@ -55,6 +58,7 @@ Deno.serve(async (req) => {
       link_ready: true,
       email,
       access_preserved: true,
+      is_first_access: isFirstAccess,
     };
 
     if (sendEmail === false) return Response.json({ ...linkResult, success: true, email_requested: false });
@@ -67,6 +71,9 @@ Deno.serve(async (req) => {
         const publicBrand = publicBrands[0] || {};
         const clubName = String(publicBrand.club_name || profiles[0]?.official_name || "el club");
         const logoUrl = String(publicBrand.logo_url || "").trim();
+        const hexColor = (value, fallback) => (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(value || "").trim()) ? String(value).trim() : fallback);
+        const primaryColor = hexColor(publicBrand.primary_color, "#2563eb");
+        const accentColor = hexColor(publicBrand.accent_color, "#60a5fa");
         const safeName = escapeHtml(staffName || access.staff_name || access.user_name || "Usuario");
         const safeClubName = escapeHtml(clubName);
         const safeLoginUrl = escapeHtml(loginUrl || applicationOrigin + loginPath);
@@ -74,28 +81,42 @@ Deno.serve(async (req) => {
         const safeEmail = escapeHtml(email);
         const safeLogo = logoUrl ? escapeHtml(logoUrl) : "";
 
+        const subject = isFirstAccess
+          ? `Bienvenido a la plataforma de ${clubName}`
+          : `Tu acceso a ${clubName} ya está habilitado`;
+        const eyebrow = isFirstAccess ? "Bienvenido a la plataforma" : "Acceso habilitado";
+        const heading = isFirstAccess ? `Hola ${safeName}, bienvenido/a` : `Hola ${safeName}`;
+        const introText = isFirstAccess
+          ? `El club <strong style="color:#fff">${safeClubName}</strong> te dio acceso a PerformancePitch con el correo <strong style="color:#fff">${safeEmail}</strong>. Para empezar, creá tu contraseña.`
+          : `El club autorizó el correo <strong style="color:#fff">${safeEmail}</strong> para ingresar a PerformancePitch.`;
+        const primaryCtaUrl = isFirstAccess ? safeFirstAccessUrl : safeLoginUrl;
+        const primaryCtaLabel = isFirstAccess ? "Crear mi contraseña" : "Ingresar a PerformancePitch";
+        const secondaryCtaUrl = isFirstAccess ? safeLoginUrl : safeFirstAccessUrl;
+        const secondaryCtaLabel = isFirstAccess ? "¿Ya tenés contraseña? Ingresar" : "¿No podés ingresar? Crear o restablecer contraseña";
+
         await base44.integrations.Core.SendEmail({
           to: email,
-          subject: `Tu acceso a ${clubName} ya está habilitado`,
+          subject,
           from_name: `${clubName} · PerformancePitch`,
           body: `
             <div style="background:#07080a;padding:32px 16px;font-family:Arial,sans-serif;color:#ffffff">
               <div style="max-width:580px;margin:auto;background:#18181b;border:1px solid #27272a;border-radius:22px;overflow:hidden">
+                <div style="height:6px;background:linear-gradient(90deg,${primaryColor},${accentColor})"></div>
                 <div style="padding:26px 30px;border-bottom:1px solid #27272a;display:flex;align-items:center;gap:14px">
                   ${safeLogo ? `<img src="${safeLogo}" alt="${safeClubName}" style="width:52px;height:52px;object-fit:contain">` : ""}
                   <div><div style="font-size:18px;font-weight:800">${safeClubName}</div><div style="margin-top:4px;font-size:12px;color:#71717a">Tecnología PerformancePitch</div></div>
                 </div>
                 <div style="padding:30px">
-                  <div style="font-size:11px;font-weight:800;letter-spacing:1.7px;color:#60a5fa;text-transform:uppercase">Acceso habilitado</div>
-                  <h2 style="margin:12px 0 8px;font-size:26px;line-height:1.2">Hola ${safeName}</h2>
-                  <p style="margin:0;color:#a1a1aa;line-height:1.65">El club autorizó el correo <strong style="color:#fff">${safeEmail}</strong> para ingresar a PerformancePitch.</p>
+                  <div style="font-size:11px;font-weight:800;letter-spacing:1.7px;color:${accentColor};text-transform:uppercase">${eyebrow}</div>
+                  <h2 style="margin:12px 0 8px;font-size:26px;line-height:1.2">${heading}</h2>
+                  <p style="margin:0;color:#a1a1aa;line-height:1.65">${introText}</p>
                   <div style="margin:22px 0;padding:16px;background:#09090b;border:1px solid #27272a;border-radius:14px;color:#d4d4d8;font-size:13px;line-height:1.7">
                     Si ya tenés contraseña, ingresá normalmente.<br>
                     Si es tu primera vez, elegí <strong style="color:#fff">Crear contraseña</strong> y verificá tu email.<br>
                     También podés usar Google con el mismo correo autorizado.
                   </div>
-                  <a href="${safeLoginUrl}" style="display:block;background:#2563eb;color:#fff;text-align:center;text-decoration:none;padding:15px 22px;border-radius:12px;font-weight:800">Ingresar a PerformancePitch</a>
-                  <p style="margin:16px 0 0;text-align:center;font-size:12px;color:#71717a">Primera vez: <a href="${safeFirstAccessUrl}" style="color:#60a5fa;text-decoration:none;font-weight:700">crear contraseña</a></p>
+                  <a href="${primaryCtaUrl}" style="display:block;background:${primaryColor};color:#fff;text-align:center;text-decoration:none;padding:15px 22px;border-radius:12px;font-weight:800">${primaryCtaLabel}</a>
+                  <p style="margin:16px 0 0;text-align:center;font-size:12px;color:#71717a"><a href="${secondaryCtaUrl}" style="color:${accentColor};text-decoration:none;font-weight:700">${secondaryCtaLabel}</a></p>
                   <p style="margin:20px 0 0;font-size:12px;line-height:1.6;color:#71717a">Este aviso no vence. El acceso se mantiene mientras el club lo tenga habilitado.</p>
                 </div>
               </div>
