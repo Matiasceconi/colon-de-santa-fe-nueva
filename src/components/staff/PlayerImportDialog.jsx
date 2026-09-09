@@ -89,10 +89,11 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
   function downloadTemplate() {
     const labels = playerColumnLabels();
     // Hoja "Carga de jugadores": filas de encabezado + fila de columnas + ejemplo
+    const exampleRowArray = playerExampleRowArray();
     const aoa = [
       ...buildHeaderRows(clubName),
       labels,
-      playerExampleRowArray(),
+      exampleRowArray,
     ];
     const sheet = XLSX.utils.aoa_to_sheet(aoa);
     sheet["!cols"] = playerColumnWidths();
@@ -107,7 +108,6 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
     ];
     // Fila 7 (la primera de datos, con el ejemplo) en adelante: fórmula de
     // control automático precargada para que se calcule sola al completar.
-    const exampleRowArray = playerExampleRowArray();
     writeControlAutoFormulas(sheet, 7, 6 + TEMPLATE_DATA_ROWS, (r) => (r === 7 ? exampleRowArray : null));
     extendSheetRange(sheet, 6 + TEMPLATE_DATA_ROWS, lastCol);
 
