@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingFirstAccess, setCheckingFirstAccess] = useState(false);
   const { brand } = usePublicClubBrand();
 
   const access = urlParams.get("access") || "staff";
@@ -37,6 +38,30 @@ export default function Login() {
   const forgotLink = normalizedEmail
     ? `/forgot-password?email=${encodeURIComponent(normalizedEmail)}&access=${encodeURIComponent(access)}`
     : `/forgot-password?access=${encodeURIComponent(access)}`;
+
+  useEffect(() => {
+    const invitedEmail = (urlParams.get("email") || "").trim().toLowerCase();
+    if (isPlayer || !invitedEmail || emailVerified) return;
+    let active = true;
+    setCheckingFirstAccess(true);
+    base44.functions
+      .invoke("check-staff-authorization", { email: invitedEmail })
+      .then((response) => {
+        if (!active) return;
+        const status = response?.data || response || {};
+        const hasReadyAccount = status.account_exists && status.is_verified;
+        if (status.authorized && !hasReadyAccount) {
+          window.location.replace(`/activate-staff?email=${encodeURIComponent(invitedEmail)}`);
+          return;
+        }
+        setCheckingFirstAccess(false);
+      })
+      .catch(() => {
+        if (active) setCheckingFirstAccess(false);
+      });
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleGoogleLogin() {
     setError("");
@@ -60,6 +85,17 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (checkingFirstAccess) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#07080a] text-white">
+        <div className="flex flex-col items-center gap-3 text-zinc-400">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <p className="text-xs font-semibold uppercase tracking-[.14em]">Verificando tu acceso…</p>
+        </div>
+      </main>
+    );
   }
 
   return (
