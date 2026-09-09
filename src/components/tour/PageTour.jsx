@@ -12,7 +12,7 @@ export function isTourCompleted(pageKey) {
   return !!localStorage.getItem(STORAGE_PREFIX + pageKey);
 }
 
-export default function PageTour({ pageKey, steps, autoStart = false, onStepChange }) {
+export default function PageTour({ pageKey, steps, autoStart = false, onStepChange, standalone = false, startSignal = 0 }) {
   const [active, setActive] = useState(false);
   const [index, setIndex] = useState(0);
   const [spot, setSpot] = useState(null);
@@ -32,11 +32,21 @@ export default function PageTour({ pageKey, steps, autoStart = false, onStepChan
   }, [autoStart, completedKey, start]);
 
   // Listen for global trigger from the "Guía dinámica" button.
+  // Los tours "standalone" (paneles embebidos que conviven con otro tour de página,
+  // como Referencias GPS dentro de Admin) no escuchan el evento global para evitar
+  // que dos recorridos se abran superpuestos: solo arrancan por su propio botón local.
   useEffect(() => {
+    if (standalone) return;
     const handler = () => start();
     window.addEventListener(START_EVENT, handler);
     return () => window.removeEventListener(START_EVENT, handler);
-  }, [start]);
+  }, [standalone, start]);
+
+  // Disparo local para tours standalone: el panel incrementa startSignal en su propio botón.
+  useEffect(() => {
+    if (!standalone || !startSignal) return;
+    start();
+  }, [standalone, startSignal, start]);
 
   const measure = useCallback(() => {
     if (!active || !step) return;
