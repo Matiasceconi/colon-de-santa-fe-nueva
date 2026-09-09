@@ -27,7 +27,6 @@ export const MODULES = [
   { id: "club_dashboard", label: "Tablero del Club", path: "/club-dashboard" },
   { id: "dashboard", label: "Tablero del Cuerpo Técnico", path: "/dashboard" },
   { id: "sesiones", label: "Sesiones", path: "/sessions" },
-  { id: "catapult", label: "GPS legado / Catapult", path: "/catapult" },
   { id: "partidos", label: "Partidos", path: "/matches" },
   { id: "mapa_tactico", label: "Pizarra Táctica", path: "/tactical" },
   { id: "rendimiento_dashboard", label: "Tablero de Rendimiento", path: "/performance/dashboard" },
