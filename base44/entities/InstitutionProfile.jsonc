@@ -216,7 +216,19 @@
     },
     "custom_domain": {
       "type": "string",
-      "description": "Dominio o subdominio deseado para la instancia del club"
+      "description": "Dominio o subdominio deseado para la instancia del club",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "domain_status": {
       "type": "string",
@@ -227,7 +239,19 @@
         "activo"
       ],
       "default": "pendiente",
-      "description": "Estado de configuraci\u00f3n del dominio"
+      "description": "Estado de configuraci\u00f3n del dominio",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "client_admin_name": {
       "type": "string",
@@ -236,31 +260,103 @@
     "client_admin_email": {
       "type": "string",
       "format": "email",
-      "description": "Email del administrador responsable del club"
+      "description": "Email del administrador responsable del club",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "delivery_notes": {
       "type": "string",
-      "description": "Notas operativas de preparaci\u00f3n y entrega"
+      "description": "Notas operativas de preparaci\u00f3n y entrega",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "delivery_checklist": {
       "type": "object",
       "default": {},
-      "description": "Controles finales de seguridad y funcionamiento"
+      "description": "Controles finales de seguridad y funcionamiento",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "setup_owner_email": {
       "type": "string",
       "format": "email",
-      "description": "Responsable general que prepar\u00f3 la copia"
+      "description": "Responsable general que prepar\u00f3 la copia",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "handoff_ready": {
       "type": "boolean",
       "default": false,
-      "description": "La copia fue verificada y est\u00e1 lista para entregar"
+      "description": "La copia fue verificada y est\u00e1 lista para entregar",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "handoff_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Fecha y hora en que se marc\u00f3 lista para entregar"
+      "description": "Fecha y hora en que se marc\u00f3 lista para entregar",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
   "required": [
@@ -272,7 +368,7 @@
         "role": "admin"
       }
     },
-    "read": null,
+    "read": true,
     "update": {
       "user_condition": {
         "role": "admin"
