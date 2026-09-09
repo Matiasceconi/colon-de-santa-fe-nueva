@@ -2,9 +2,17 @@ const normalize = value => String(value || "").normalize("NFD").replace(/[\u0300
 
 const aliases = {
   arq: "arquero", gk: "arquero", portero: "arquero", goalkeeper: "arquero", golero: "arquero", guardameta: "arquero",
-  defensor: "defensor central", carrilero: "lateral derecho",
+  defensor: "defensor central",
   mediocampista: "mediocampista central", volante: "mediocampista central",
-  extremo: "extremo derecho", delantero: "delantero centro",
+  delantero: "delantero centro",
+};
+
+// Posiciones genéricas sin lado definido (no dicen si es izquierdo o derecho):
+// se reparten alternadamente entre ambos costados para no amontonar a todos
+// del mismo lado de la cancha, que era lo que pasaba antes.
+const SIDED_ALIASES = {
+  carrilero: ["lateral izquierdo", "lateral derecho"],
+  extremo: ["extremo izquierdo", "extremo derecho"],
 };
 
 export const MAP_ROWS = [
@@ -18,6 +26,24 @@ export const MAP_ROWS = [
 
 const known = new Map(MAP_ROWS.flat().map(([name]) => [normalize(name), name]));
 
+// Envuelve una lista de nombres en varias líneas en vez de truncarla: evita que
+// el conteo mostrado (ej. "Kinesiología (8)") no coincida con los nombres visibles.
+function wrapNames(names, maxCharsPerLine = 70) {
+  const lines = [];
+  let current = "";
+  for (const name of names) {
+    const candidate = current ? `${current} · ${name}` : name;
+    if (current && candidate.length > maxCharsPerLine) {
+      lines.push(current);
+      current = name;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
 /**
  * El mapa usa attendance como fuente operativa del trabajo realizado ese día.
  * status_at_session aporta contexto/alerta, pero no mueve automáticamente al jugador
@@ -30,6 +56,7 @@ export function buildDayMap(players = []) {
   const kinesiologia = [];
   const excluded = [];
   const seen = new Set();
+  const sidedCounters = {};
 
   for (const p of players) {
     const key = p.player_id || p.id;
@@ -43,7 +70,13 @@ export function buildDayMap(players = []) {
 
     const entry = { ...p, _warning: ["molestia", "reintegro", "lesionado"].includes(normalize(p.status_at_session)) };
     const pos = normalize(p.position);
-    const group = known.get(aliases[pos] || pos);
+    let group = known.get(aliases[pos] || pos);
+    if (!group && SIDED_ALIASES[pos]) {
+      const sides = SIDED_ALIASES[pos];
+      const seenOfKind = sidedCounters[pos] || 0;
+      group = known.get(sides[seenOfKind % sides.length]);
+      sidedCounters[pos] = seenOfKind + 1;
+    }
     if (group) groups[group].push(entry); else unknown.push(entry);
   }
 
@@ -62,7 +95,18 @@ export function buildDayMap(players = []) {
   const pitchBottom = y + 12;
   const teamCount = Object.values(groups).reduce((n,list)=>n+list.length,0) + unknown.length;
   const totalAssigned = teamCount + diferenciados.length + kinesiologia.length + excluded.length;
-  const specialRows = Math.max(1, diferenciados.length, kinesiologia.length);
+
+  // Listas completas (sin truncar) para el detalle de Diferenciado/Kinesiología,
+  // más las posiciones Y donde va cada bloque de texto dentro del SVG, calculadas
+  // acá una sola vez para que el alto del mapa (height) siempre alcance.
+  const diferenciadosLines = wrapNames(diferenciados.map(p => p.player_name).filter(Boolean));
+  const kinesiologiaLines = wrapNames(kinesiologia.map(p => p.player_name).filter(Boolean));
+
+  let cursor = Math.max(73 + unknown.length * 26, 73) + 32;
+  const diferenciadosHeaderY = cursor;
+  cursor += 24 + diferenciadosLines.length * 22 + 32;
+  const kinesiologiaHeaderY = cursor;
+  cursor += 24 + kinesiologiaLines.length * 22 + 30;
 
   return {
     groups,
@@ -70,9 +114,13 @@ export function buildDayMap(players = []) {
     excluded,
     diferenciados,
     kinesiologia,
+    diferenciadosLines,
+    kinesiologiaLines,
+    diferenciadosHeaderY,
+    kinesiologiaHeaderY,
     bands,
     pitchBottom,
-    height: pitchBottom + 150 + unknown.length * 24 + specialRows * 4,
+    height: pitchBottom + cursor,
     count: teamCount,
     totalAssigned,
   };
