@@ -30,7 +30,6 @@ const AREA_BY_MODULE = {
   club_dashboard: "coordinacion_general",
   dashboard: "cuerpo_tecnico",
   sesiones: "cuerpo_tecnico",
-  catapult: "rendimiento_fisico",
   partidos: "cuerpo_tecnico",
   rendimiento_dashboard: "rendimiento_fisico",
   carga_externa: "rendimiento_fisico",
