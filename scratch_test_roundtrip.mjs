@@ -10,7 +10,6 @@ import {
   extendSheetRange,
 } from "./src/lib/playerSpreadsheet.js";
 
-// --- 1. Build the template exactly like downloadTemplate() does (in-memory, no file I/O) ---
 function buildHeaderRows(clubName) {
   return [
     [`${clubName.toUpperCase()} · IMPORTACIÓN DE JUGADORES`],
@@ -21,23 +20,40 @@ function buildHeaderRows(clubName) {
   ];
 }
 const labels = playerColumnLabels();
-const aoa = [...buildHeaderRows("Colón de Santa Fe"), labels, playerExampleRowArray()];
+const exampleRowArray = playerExampleRowArray();
+const aoa = [...buildHeaderRows("Colón de Santa Fe"), labels, exampleRowArray];
 const sheet = XLSX.utils.aoa_to_sheet(aoa);
 sheet["!cols"] = playerColumnWidths();
 const lastCol = PLAYER_COLUMNS.length - 1;
-writeControlAutoFormulas(sheet, 7, 306);
+writeControlAutoFormulas(sheet, 7, 306, (r) => (r === 7 ? exampleRowArray : null));
 extendSheetRange(sheet, 306, lastCol);
 
-// --- 2. Add a second real data row manually (simulating a user filling the sheet) ---
+// Segunda fila de datos, cargada "a mano"
 const rowValues = ["Primera", "DNI", "38555111", "Gómez", "Lucía", "01/01/2000", "Rosario", "Argentina", "AMBA", "", "", "", "Interna", "", "Zurdo", "Arquero", "", "1", "Con contrato", "Lesionado", "Ojo lesionado", ""];
 rowValues.forEach((val, c) => {
-  const ref = XLSX.utils.encode_cell({ r: 7, c }); // fila 8 (0-based 7)
+  const ref = XLSX.utils.encode_cell({ r: 7, c });
   sheet[ref] = { t: typeof val === "number" ? "n" : "s", v: val };
 });
 extendSheetRange(sheet, 8, lastCol);
 
-// --- 3. Simulate PlayerImportDialog's parseRows() against this sheet ---
-const aoa3 = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, sheet, "Carga de jugadores");
+
+// --- Serializar a un buffer real y volver a leerlo, como pasaría con un archivo subido ---
+const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+console.log("Workbook serialized, bytes:", buf.length);
+const workbook = XLSX.read(buf, { type: "buffer", cellDates: true });
+const sheetName = workbook.SheetNames.includes("Carga de jugadores") ? "Carga de jugadores" : workbook.SheetNames[0];
+const sheet3 = workbook.Sheets[sheetName];
+const refRange = XLSX.utils.decode_range(sheet3["!ref"] || "A1");
+let maxRow = refRange.e.r;
+for (const key of Object.keys(sheet3)) {
+  if (key[0] === "!") continue;
+  const cellRef = XLSX.utils.decode_cell(key);
+  if (cellRef.r > maxRow) maxRow = cellRef.r;
+}
+if (maxRow > refRange.e.r) { refRange.e.r = maxRow; sheet3["!ref"] = XLSX.utils.encode_range(refRange); }
+const aoa3 = XLSX.utils.sheet_to_json(sheet3, { header: 1, raw: true, defval: "" });
 
 let headerIndex = -1;
 for (let i = 0; i < Math.min(aoa3.length, 15); i += 1) {
@@ -72,6 +88,7 @@ for (let r = headerIndex + 1; r < aoa3.length; r += 1) {
     contract_status: String(get(idx.contract_status)).trim(),
     jersey_number: get(idx.jersey_number) === "" ? undefined : get(idx.jersey_number),
     notes: String(get(idx.notes)).trim(),
+    control: get(idx.control),
   });
 }
 console.log("\nParsed rows:", JSON.stringify(rows, null, 2));
@@ -85,3 +102,7 @@ console.log("Row2 status parsed as 'Lesionado':", manual.status === "Lesionado")
 console.log("Row2 contract_status parsed as 'Con contrato':", manual.contract_status === "Con contrato");
 console.log("Row2 jersey_number parsed as '1':", manual.jersey_number === "1" || manual.jersey_number === 1);
 console.log("Row2 notes parsed as 'Ojo lesionado':", manual.notes === "Ojo lesionado");
+
+// Also check blank row (e.g. row 100) shows the "Falta" cached value
+const blankRef = XLSX.utils.encode_cell({ r: 99, c: PLAYER_COLUMNS.length - 1 });
+console.log("\nBlank template row control cell (row 100):", sheet[blankRef]);
