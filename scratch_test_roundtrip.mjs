@@ -1,7 +1,6 @@
 import * as XLSX from "xlsx";
 import {
   PLAYER_COLUMNS,
-  PLAYER_DATA_COLUMNS,
   playerColumnLabels,
   playerColumnWidths,
   playerExampleRowArray,
@@ -9,10 +8,9 @@ import {
   normalizeSpreadsheetText,
   writeControlAutoFormulas,
   extendSheetRange,
-  playerExportRowArray,
 } from "./src/lib/playerSpreadsheet.js";
 
-// --- 1. Build the template exactly like downloadTemplate() does ---
+// --- 1. Build the template exactly like downloadTemplate() does (in-memory, no file I/O) ---
 function buildHeaderRows(clubName) {
   return [
     [`${clubName.toUpperCase()} · IMPORTACIÓN DE JUGADORES`],
@@ -29,39 +27,17 @@ sheet["!cols"] = playerColumnWidths();
 const lastCol = PLAYER_COLUMNS.length - 1;
 writeControlAutoFormulas(sheet, 7, 306);
 extendSheetRange(sheet, 306, lastCol);
-const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, sheet, "Carga de jugadores");
-XLSX.writeFile(wb, "/tmp/template_test.xlsx");
-console.log("Template written.");
 
 // --- 2. Add a second real data row manually (simulating a user filling the sheet) ---
-const wb2 = XLSX.readFile("/tmp/template_test.xlsx");
-const sh2 = wb2.Sheets["Carga de jugadores"];
-// Row 8 (0-based row 7) = second player, filled by "hand"
 const rowValues = ["Primera", "DNI", "38555111", "Gómez", "Lucía", "01/01/2000", "Rosario", "Argentina", "AMBA", "", "", "", "Interna", "", "Zurdo", "Arquero", "", "1", "Con contrato", "Lesionado", "Ojo lesionado", ""];
 rowValues.forEach((val, c) => {
-  const ref = XLSX.utils.encode_cell({ r: 7, c });
-  sh2[ref] = { t: typeof val === "number" ? "n" : "s", v: val };
+  const ref = XLSX.utils.encode_cell({ r: 7, c }); // fila 8 (0-based 7)
+  sheet[ref] = { t: typeof val === "number" ? "n" : "s", v: val };
 });
-const range = XLSX.utils.decode_range(sh2["!ref"]);
-if (7 > range.e.r) { range.e.r = 7; sh2["!ref"] = XLSX.utils.encode_range(range); }
-XLSX.writeFile(wb2, "/tmp/template_test.xlsx");
+extendSheetRange(sheet, 8, lastCol);
 
-// --- 3. Now simulate PlayerImportDialog's parseRows() against this file ---
-const buf = XLSX.readFileSync ? null : null;
-const fileBuf = (await import("node:fs")).readFileSync("/tmp/template_test.xlsx");
-const workbook = XLSX.read(fileBuf, { type: "buffer", cellDates: true });
-const sheetName = workbook.SheetNames.includes("Carga de jugadores") ? "Carga de jugadores" : workbook.SheetNames[0];
-const sheet3 = workbook.Sheets[sheetName];
-const refRange = XLSX.utils.decode_range(sheet3["!ref"] || "A1");
-let maxRow = refRange.e.r;
-for (const key of Object.keys(sheet3)) {
-  if (key[0] === "!") continue;
-  const cellRef = XLSX.utils.decode_cell(key);
-  if (cellRef.r > maxRow) maxRow = cellRef.r;
-}
-if (maxRow > refRange.e.r) { refRange.e.r = maxRow; sheet3["!ref"] = XLSX.utils.encode_range(refRange); }
-const aoa3 = XLSX.utils.sheet_to_json(sheet3, { header: 1, raw: true, defval: "" });
+// --- 3. Simulate PlayerImportDialog's parseRows() against this sheet ---
+const aoa3 = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
 
 let headerIndex = -1;
 for (let i = 0; i < Math.min(aoa3.length, 15); i += 1) {
@@ -71,7 +47,7 @@ for (let i = 0; i < Math.min(aoa3.length, 15); i += 1) {
     break;
   }
 }
-console.log("\nheaderIndex found at row (0-based):", headerIndex, "-> should be 5");
+console.log("headerIndex found at row (0-based):", headerIndex, "-> should be 5");
 
 const headers3 = aoa3[headerIndex];
 const idx = detectPlayerColumns(headers3);
