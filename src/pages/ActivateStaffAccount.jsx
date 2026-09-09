@@ -15,7 +15,6 @@ import {
   LockKeyhole,
   MailCheck,
 } from "lucide-react";
-import GoogleIcon from "@/components/GoogleIcon";
 import { usePublicClubBrand } from "@/hooks/usePublicClubBrand";
 import { PerformancePitchBrand } from "@/components/auth/AccessBrand";
 
@@ -88,7 +87,7 @@ export default function ActivateStaffAccount() {
       if (statusCode === 409 || message.includes("exist") || message.includes("registr")) {
         setStage("existing");
       } else {
-        setError(errorMessage(err, "No se pudo crear la cuenta. Podés intentar con Google o recuperar una contraseña existente."));
+        setError(errorMessage(err, "No se pudo crear la cuenta. Podés recuperar una contraseña existente si ya tenías una cuenta."));
       }
     } finally {
       setLoading(false);
@@ -140,19 +139,6 @@ export default function ActivateStaffAccount() {
     }
   }
 
-  async function googleAccess() {
-    setLoading(true);
-    setError("");
-    try {
-      const status = await checkAuthorization();
-      if (!status?.authorized) throw new Error("Este correo no tiene acceso habilitado.");
-      base44.auth.loginWithProvider("google", `${window.location.origin}/login?access=staff`);
-    } catch (err) {
-      setError(errorMessage(err, "No se pudo iniciar con Google."));
-      setLoading(false);
-    }
-  }
-
   const queryStep = params.get("step");
   React.useEffect(() => {
     if (queryStep === "verify" && invitedEmail) setStage("verify");
@@ -195,8 +181,6 @@ export default function ActivateStaffAccount() {
               <div><Label className="text-xs font-semibold text-zinc-300">Nueva contraseña</Label><div className="relative mt-1.5"><Input type={showPassword ? "text" : "password"} value={password} onChange={event => setPassword(event.target.value)} autoComplete="new-password" className="h-12 border-zinc-700 bg-zinc-950 pr-11 focus:border-blue-500" placeholder="Mínimo 8 caracteres" required/><button type="button" onClick={() => setShowPassword(value => !value)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-300">{showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></div>
               <div><Label className="text-xs font-semibold text-zinc-300">Repetir contraseña</Label><Input type={showPassword ? "text" : "password"} value={confirmation} onChange={event => setConfirmation(event.target.value)} autoComplete="new-password" className="mt-1.5 h-12 border-zinc-700 bg-zinc-950 focus:border-blue-500" required/><div className="mt-2 flex gap-3 text-[10px] font-semibold"><span className={password.length >= 8 ? "text-emerald-400" : "text-zinc-600"}><Check size={10} className="mr-1 inline"/>8 caracteres</span><span className={password && password === confirmation ? "text-emerald-400" : "text-zinc-600"}><Check size={10} className="mr-1 inline"/>Coinciden</span></div></div>
               <Button disabled={loading} className="h-12 w-full bg-blue-600 font-black hover:bg-blue-500">{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Crear contraseña</Button>
-              <div className="flex items-center gap-3"><div className="h-px flex-1 bg-zinc-800"/><span className="text-[10px] text-zinc-600">o</span><div className="h-px flex-1 bg-zinc-800"/></div>
-              <Button type="button" variant="outline" onClick={googleAccess} disabled={loading} className="h-11 w-full border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-100"><GoogleIcon className="mr-2 h-5 w-5"/>Continuar con Google</Button>
             </form>}
 
             {stage === "verify" && <form onSubmit={verifyAndEnter} className="mt-7 space-y-5">
@@ -208,7 +192,6 @@ export default function ActivateStaffAccount() {
             {stage === "existing" && <div className="mt-7 space-y-3">
               <Link to={loginLink} className="flex h-12 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white hover:bg-blue-500">Ingresar con mi contraseña</Link>
               {resetSent ? <div className="flex items-start gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-300"><CheckCircle2 size={16} className="mt-0.5 shrink-0"/>Te enviamos el correo para crear o cambiar tu contraseña.</div> : <Button onClick={requestPasswordLink} disabled={loading} variant="outline" className="h-12 w-full border-zinc-700 bg-zinc-950 text-zinc-200 hover:bg-zinc-800">Crear / recuperar contraseña</Button>}
-              <Button onClick={googleAccess} disabled={loading} variant="outline" className="h-11 w-full border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-100"><GoogleIcon className="mr-2 h-5 w-5"/>Continuar con Google</Button>
             </div>}
 
             {stage !== "identify" && <button onClick={() => { setStage("identify"); setError(""); }} className="mt-6 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-white"><ArrowLeft size={13}/>Cambiar correo</button>}
