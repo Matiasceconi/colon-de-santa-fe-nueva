@@ -133,6 +133,27 @@ function mapHousingType(raw: string): string | undefined {
   return undefined;
 }
 
+const STATUS_OPTIONS = [
+  "Disponible", "Lesionado", "En recuperación", "Suspendido", "Permiso",
+  "Selección", "Subio a primera", "Bajo a juveniles", "Subieron de juveniles",
+  "Bajo de primera", "Sparring",
+];
+
+function mapStatus(raw: string): string | undefined {
+  const n = normalizeText(raw);
+  if (!n) return undefined;
+  return STATUS_OPTIONS.find((option) => normalizeText(option) === n) || undefined;
+}
+
+function mapContractStatus(raw: string): string | undefined {
+  const n = normalizeText(raw);
+  if (!n) return undefined;
+  if (n.includes("sin contrato")) return "Sin contrato";
+  if (n.includes("con contrato") || n === "contrato") return "Con contrato";
+  if (n.includes("sin informacion")) return "Sin información";
+  return undefined;
+}
+
 function resolveSquadByName(squadName: string, squads: any[], fallbackSquad: any): any | null {
   const target = normalizeText(squadName);
   if (!target) return fallbackSquad || null;
