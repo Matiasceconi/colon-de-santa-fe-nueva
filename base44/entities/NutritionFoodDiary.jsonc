@@ -1,0 +1,111 @@
+{
+  "name": "NutritionFoodDiary",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "squad_id": {
+      "type": "string"
+    },
+    "season_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "log_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "staff",
+        "player"
+      ],
+      "default": "staff"
+    },
+    "meals": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    },
+    "appetite": {
+      "type": "string",
+      "enum": [
+        "muy_bajo",
+        "bajo",
+        "normal",
+        "alto",
+        "muy_alto"
+      ]
+    },
+    "adherence": {
+      "type": "string",
+      "enum": [
+        "muy_baja",
+        "baja",
+        "adecuada",
+        "muy_buena"
+      ]
+    },
+    "gi_symptoms": {
+      "type": "boolean",
+      "default": false
+    },
+    "gi_symptom_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "notes": {
+      "type": "string"
+    },
+    "created_by_name": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "player_id",
+    "log_date"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
