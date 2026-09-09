@@ -28,10 +28,6 @@ export const GLOBAL_PAGE_TOURS = {
     intro("Carga externa / GPS", "Esta ruta conserva compatibilidad con el módulo GPS. El flujo recomendado es trabajar desde Carga externa / GPS y mantener una sola importación canónica por sesión o partido."),
     content("Qué hacer acá", "Revisá sesiones, jugadores, tareas, referencias y reportes. Si el club no tiene integración con un proveedor, el flujo CSV debe seguir funcionando completo."),
   ],
-  "/catapult": [
-    intro("Adaptador GPS legado", "Esta pantalla se conserva por compatibilidad con cargas Catapult anteriores. No es una dependencia del producto ni la fuente principal de la arquitectura nueva."),
-    content("Flujo recomendado", "Para nuevas cargas usá Carga externa / GPS. Si el club contrata Catapult u otro proveedor, la integración debe alimentar las entidades canónicas sin cambiar el flujo manual."),
-  ],
   "/performance/microcycle-history": [
     intro("Historial de microciclos", "Permite revisar semanas anteriores y comparar cómo se distribuyeron volumen, intensidad y exposición neuromuscular alrededor del partido."),
     content("1. Elegí microciclo y plantel", "La comparación tiene sentido cuando las sesiones están correctamente vinculadas a su plantel, temporada y código MD."),
