@@ -14,7 +14,6 @@ import {
   Lock,
   MailCheck,
 } from "lucide-react";
-import GoogleIcon from "@/components/GoogleIcon";
 import { usePublicClubBrand } from "@/hooks/usePublicClubBrand";
 import { ClubIdentity, PerformancePitchBrand } from "@/components/auth/AccessBrand";
 
@@ -62,16 +61,6 @@ export default function Login() {
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  function handleGoogleLogin() {
-    setError("");
-    const returnUrl = `${window.location.origin}/login?access=${encodeURIComponent(access)}`;
-    try {
-      base44.auth.loginWithProvider("google", returnUrl);
-    } catch {
-      setError("No pudimos ingresar con Google. Intentá nuevamente o utilizá email y contraseña.");
-    }
-  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -198,16 +187,6 @@ export default function Login() {
                 {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Ingresando...</> : "Ingresar al software"}
               </Button>
             </form>
-
-            <div className="my-6 flex items-center gap-3">
-              <div className="h-px flex-1 bg-zinc-800" />
-              <span className="text-[10px] font-bold uppercase tracking-[.14em] text-zinc-600">o usá tu cuenta</span>
-              <div className="h-px flex-1 bg-zinc-800" />
-            </div>
-
-            <Button type="button" variant="outline" onClick={handleGoogleLogin} className="flex h-11 w-full items-center justify-center gap-2.5 border-zinc-300 bg-white font-semibold text-zinc-900 hover:bg-zinc-100">
-              <GoogleIcon className="h-5 w-5" /> Ingresar con Google
-            </Button>
 
             {!isPlayer && (
               <div className="mt-7 rounded-2xl border border-blue-500/20 bg-blue-500/[.06] p-4">
