@@ -303,7 +303,7 @@ export default function Players() {
     sheet["!cols"] = playerColumnWidths();
     sheet["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } }];
     if (rows.length > 0) {
-      writeControlAutoFormulas(sheet, 3, 2 + rows.length);
+      writeControlAutoFormulas(sheet, 3, 2 + rows.length, (r) => rows[r - 3]);
       extendSheetRange(sheet, 2 + rows.length, lastCol);
     }
     const workbook = XLSX.utils.book_new();
