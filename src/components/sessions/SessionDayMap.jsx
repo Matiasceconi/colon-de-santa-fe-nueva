@@ -259,6 +259,7 @@ export default function SessionDayMap({ players, playerPhotos = {}, session = {}
           const isDragging = dragId === key;
           return <g key={key}>
             {photoUrl && !failedPhotos.has(key) ? (
+              // eslint-disable-next-line react/no-unknown-property -- onError is valid on SVG <image>, the plugin's SVG allowlist just doesn't include it
               <image className="player-photo" href={photoUrl} x={cx-18} y={cy-18} width="36" height="36" clipPath={`url(#${clipId})`} preserveAspectRatio="xMidYMid slice" pointerEvents="none" onError={() => setFailedPhotos(prev => new Set(prev).add(key))}/>
             ) : (
               <>

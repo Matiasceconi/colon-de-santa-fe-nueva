@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { X, Lock, Eye, EyeOff, CheckCircle, Loader2, User, Camera } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
@@ -19,6 +20,28 @@ export default function UserProfileModal({ onClose }) {
   const [success, setSuccess] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState("");
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialogRef.current?.querySelector('button')?.focus();
+    function handleKeyDown(event) {
+      if (event.key === "Escape") { event.preventDefault(); onClose(); }
+      if (event.key !== "Tab") return;
+      const controls = [...(dialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), [tabindex="0"]') || [])].filter(el => el.getClientRects().length);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [onClose]);
 
   async function handlePhotoChange(event) {
     const file = event.target.files?.[0];
@@ -56,29 +79,29 @@ export default function UserProfileModal({ onClose }) {
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md shadow-2xl">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4" onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Editar perfil" className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-zinc-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center">
+        <div className="flex shrink-0 items-center justify-between gap-3 p-5 border-b border-zinc-800">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="w-10 h-10 shrink-0 rounded-full bg-zinc-700 flex items-center justify-center">
               {user?.photo_url
                 ? <img src={user.photo_url} className="w-10 h-10 rounded-full object-cover" alt="" />
                 : <User size={18} className="text-zinc-400" />}
             </div>
-            <div>
-              <p className="text-sm font-semibold text-white">{user?.full_name || user?.email}</p>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">{user?.full_name || user?.email}</p>
               <p className="text-xs text-zinc-500">{userAccess?.role || "Usuario"}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
+          <button type="button" onClick={onClose} aria-label="Cerrar perfil" className="shrink-0 p-2 text-zinc-500 hover:text-white transition-colors">
             <X size={18} />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-zinc-800">
+        <div className="flex shrink-0 border-b border-zinc-800">
           {[
             { key: "info", label: "Mi perfil" },
             { key: "password", label: "Cambiar contraseña" },
@@ -92,7 +115,7 @@ export default function UserProfileModal({ onClose }) {
           ))}
         </div>
 
-        <div className="p-5">
+        <div className="min-h-0 overflow-y-auto overscroll-contain p-5">
           {tab === "info" && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -192,6 +215,7 @@ export default function UserProfileModal({ onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

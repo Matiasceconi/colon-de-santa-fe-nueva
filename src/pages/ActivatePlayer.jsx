@@ -31,7 +31,6 @@ export default function ActivatePlayer() {
         setError(result.error);
       } else {
         activationTokenRef.current = result.activation_token;
-        setActivationToken(result.activation_token);
         setStep(2);
       }
     } catch (err) {
