@@ -2,12 +2,10 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Activity, Binoculars, BookOpen, CalendarDays, Dumbbell, Gauge, Heart,
-  HeartPulse, LayoutDashboard, LogOut, Menu, Settings2, ShieldCheck, Shirt,
-  Trophy, User, UserRound, UsersRound, Video, X } from
+  HeartPulse, LayoutDashboard, Menu, Settings2, ShieldCheck, Shirt,
+  Trophy, UserRound, UsersRound, Video, X } from
 "lucide-react";
 import SquadSelector from "@/components/workspace/SquadSelector";
-import UserProfileModal from "@/components/workspace/UserProfileModal";
-import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { useUserType } from "@/lib/UserTypeContext";
 import { ClubShield } from "@/components/staff/ClubChrome";
@@ -99,8 +97,6 @@ export const NAV_ITEMS = NAV_SECTIONS.flatMap((section) => section.items);
 export default function Sidebar() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const { user, logout } = useAuth();
   const {
     activeAreaName,
     canSeePath,
@@ -175,7 +171,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <nav className="space-y-3 overflow-y-auto p-3" style={{ maxHeight: "calc(100vh - 242px)" }}>
+        <nav className="space-y-3 overflow-y-auto p-3" style={{ maxHeight: "calc(100vh - 200px)" }}>
           {visibleSections.map((section) =>
           <div key={section.id}>
               <div className="mb-1 px-2 text-[9px] font-bold uppercase tracking-[0.18em] text-zinc-600">
@@ -211,48 +207,16 @@ export default function Sidebar() {
           )}
         </nav>
 
-        <div className="absolute inset-x-0 bottom-0 space-y-1.5 border-t border-white/10 bg-zinc-950/98 p-3">
-          {isPlayer &&
+        {isPlayer &&
+        <div className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-zinc-950/98 p-3">
           <Link
             to="/player"
             className="flex w-full items-center gap-2.5 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2.5 text-xs font-bold text-emerald-200 transition hover:bg-emerald-500/20">
             
               <UserRound size={15} /> Portal del Jugador
             </Link>
-          }
-          
-
-
-
-
-
-          
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setShowProfile(true)}
-              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs text-zinc-400 transition hover:bg-white/5 hover:text-white">
-              
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-800">
-                {user?.photo_url ?
-                <img src={user.photo_url} className="h-full w-full object-cover" alt="" /> :
-
-                <User size={13} />
-                }
-              </span>
-              <span className="truncate">{user?.full_name || user?.email || "Usuario"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => logout("/")}
-              className="rounded-xl p-2.5 text-zinc-600 transition hover:bg-white/5 hover:text-white"
-              aria-label="Cerrar sesión"
-              title="Cerrar sesión">
-              
-              <LogOut size={15} />
-            </button>
-          </div>
         </div>
+        }
 
         <button
           type="button"
@@ -263,8 +227,6 @@ export default function Sidebar() {
           <X size={18} />
         </button>
       </aside>
-
-      {showProfile && <UserProfileModal onClose={() => setShowProfile(false)} />}
     </>);
 
 }
