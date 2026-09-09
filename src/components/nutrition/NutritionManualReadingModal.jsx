@@ -63,7 +63,7 @@ export default function NutritionManualReadingModal({ assessment, interpretation
           ...common,
         });
       }
-      toast({ title: interpretation?.id ? "Lectura actualizada" : "Lectura creada" });
+      toast({ title: interpretation?.id ? "Interpretación actualizada" : "Interpretación creada" });
       onSaved();
     } catch (error) {
       toast({ title: "No se pudo guardar la lectura", description: error?.message || "Intentá nuevamente.", variant: "destructive" });
@@ -75,10 +75,10 @@ export default function NutritionManualReadingModal({ assessment, interpretation
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-lg border-zinc-800 bg-zinc-900 text-white">
-        <DialogHeader><DialogTitle>Lectura nutricional · {assessment?.player_name_original || "Jugador"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Interpretación antropométrica · {assessment?.player_name_original || "Jugador"}</DialogTitle></DialogHeader>
         <form onSubmit={save} className="space-y-4">
           <div>
-            <label className="mb-2 block text-xs font-medium text-zinc-400">Estado de lectura</label>
+            <label className="mb-2 block text-xs font-medium text-zinc-400">Estado de interpretación</label>
             <div className="flex flex-wrap gap-2">
               {readingStatuses.filter((status) => status.active !== false).map((status) => <button key={status.id} type="button" onClick={() => setForm((current) => ({ ...current, reading_status_id: status.id }))} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${form.reading_status_id === status.id ? "ring-2 ring-white/20" : "opacity-60 hover:opacity-100"}`} style={{ backgroundColor: status.color ? `${status.color}22` : "#27272a", borderColor: status.color || "#3f3f46", color: status.color || "#a1a1aa" }}>{status.name}</button>)}
             </div>
@@ -89,7 +89,7 @@ export default function NutritionManualReadingModal({ assessment, interpretation
             <div><label className="mb-1 block text-xs text-zinc-400">Próximo control</label><Input type="date" value={form.next_control_date} onChange={(e) => setForm((current) => ({ ...current, next_control_date: e.target.value }))} className="border-zinc-700 bg-zinc-800 text-white" /></div>
           </div>
           <div><label className="mb-1 block text-xs text-zinc-400">Responsable</label><Input value={form.responsible_user_id} onChange={(e) => setForm((current) => ({ ...current, responsible_user_id: e.target.value }))} placeholder="Nombre del nutricionista" className="border-zinc-700 bg-zinc-800 text-white" /></div>
-          <div><label className="mb-1 block text-xs text-zinc-400">Observación</label><Textarea rows={4} value={form.observation} onChange={(e) => setForm((current) => ({ ...current, observation: e.target.value }))} className="resize-none border-zinc-700 bg-zinc-800 text-white" placeholder="Lectura, objetivos, observaciones y próximos pasos..." /></div>
+          <div><label className="mb-1 block text-xs text-zinc-400">Observación</label><Textarea rows={4} value={form.observation} onChange={(e) => setForm((current) => ({ ...current, observation: e.target.value }))} className="resize-none border-zinc-700 bg-zinc-800 text-white" placeholder="Interpretación, objetivos, observaciones y próximos pasos..." /></div>
           <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={onClose} className="border-zinc-700 text-zinc-300">Cancelar</Button><Button type="submit" disabled={saving} className="bg-white text-zinc-900 hover:bg-zinc-200">{saving ? "Guardando..." : "Guardar lectura"}</Button></div>
         </form>
       </DialogContent>
