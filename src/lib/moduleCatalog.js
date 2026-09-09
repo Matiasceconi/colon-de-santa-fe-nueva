@@ -23,13 +23,6 @@ export const MODULE_LIFECYCLE = {
   competencias_afa: { status: "available", label: "Disponible" },
   scouting: { status: "available", label: "Disponible" },
 
-  catapult: {
-    status: "legacy",
-    label: "Legacy en uso",
-    replacement: "carga_externa",
-    note: "Se conserva por compatibilidad con reportes históricos. Nuevos flujos usan GPS / Tracking.",
-  },
-
   mapa_tactico: {
     status: "unavailable",
     label: "No disponible",
