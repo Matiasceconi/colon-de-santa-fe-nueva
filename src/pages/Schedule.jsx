@@ -22,6 +22,7 @@ import { EVENT_TYPES } from "@/components/schedule/scheduleImportUtils";
 import PageTour from "@/components/tour/PageTour";
 import { CALENDAR_TOUR } from "@/lib/pageTours";
 import DailyScheduleWidget from "@/components/schedule/DailyScheduleWidget";
+import { clubDateKey, clubTimezone } from "@/lib/clubTime";
 
 moment.locale("es");
 
@@ -386,19 +387,24 @@ function EventModal({ open, onClose, onSave, initial, copyData, defaultDate, clu
 // ── Main Schedule ──
 function OperationalSchedule() {
   const navigate = useNavigate();
-  const { activeSquadId, activeSquad, activeSeasonId, isAdmin } = useWorkspace();
+  const { activeSquadId, activeSquad, activeSeasonId, isAdmin, institutionProfile } = useWorkspace();
+  // Anchor "today" to the club's own timezone rather than the runtime's local
+  // clock — see src/lib/clubTime.js for why (a UTC-based preview/sandbox can
+  // already show tomorrow's date while it's still today in Argentina).
+  const timezone = clubTimezone(institutionProfile);
+  const todayStr = clubDateKey(timezone);
   const [events, setEvents] = useState([]);
   const [matches, setMatches] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [normalizingCalendar, setNormalizingCalendar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [weekStartDay, setWeekStartDay] = useState(loadWeekStartDay);
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => getCustomWeekStart(moment(), loadWeekStartDay()));
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => getCustomWeekStart(moment(todayStr), loadWeekStartDay()));
   const [view, setView] = useState("week");
-  const [timelineDate, setTimelineDate] = useState(() => moment().format("YYYY-MM-DD"));
+  const [timelineDate, setTimelineDate] = useState(() => todayStr);
   const [typeFilter, setTypeFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
-  const [currentMonth, setCurrentMonth] = useState(moment().startOf("month"));
+  const [currentMonth, setCurrentMonth] = useState(() => moment(todayStr).startOf("month"));
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
