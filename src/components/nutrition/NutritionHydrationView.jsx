@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import moment from "moment";
-import { Droplets, Gauge, Thermometer, Weight } from "lucide-react";
+import { Droplets, Gauge, Thermometer } from "lucide-react";
 import PlayerPhoto from "@/components/player/PlayerPhoto";
 
 function playerName(p){return p?.full_name||`${p?.first_name||""} ${p?.last_name||""}`.trim()||"Jugador";}
