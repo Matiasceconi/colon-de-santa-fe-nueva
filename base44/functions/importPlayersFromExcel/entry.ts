@@ -228,6 +228,15 @@ Deno.serve(async (req) => {
       const housingRaw = String(row.housing || row.housing_type || "").trim();
       const legRaw = String(row.leg || row.dominant_leg || "").trim();
       const jerseyNumber = row.jersey_number === undefined || row.jersey_number === "" ? undefined : Number(row.jersey_number);
+      const birthPlace = String(row.birth_place || "").trim();
+      const secondaryPosition = String(row.secondary_position || "").trim();
+      const phoneNumber = String(row.phone_number || "").trim();
+      const contractStatus = mapContractStatus(String(row.contract_status || "").trim());
+      const provinceRaw = String(row.province || "").trim();
+      const cityRaw = String(row.city || "").trim();
+      const fullAddressRaw = String(row.full_address || "").trim();
+      const notesRaw = String(row.notes || "").trim();
+      const statusFromRow = mapStatus(String(row.status || row.estado || "").trim());
       const fullName = `${firstName} ${lastName}`.trim();
 
       if (!firstName || !lastName || !positionRaw) {
@@ -257,6 +266,10 @@ Deno.serve(async (req) => {
       if (squadRaw) squadResolved += 1;
       const targetSquadName = resolvedSquad.name || String(squad_name || "");
 
+      const sameName = byName.get(normalizeName(fullName));
+      let player = byDni.get(dni) || (sameName && !normalizeDni(sameName.dni || sameName.document_number) ? sameName : null);
+      const isUpdate = !!player;
+
       const payload: Record<string, unknown> = {
         dni: dni || undefined,
         document_number: dni || undefined,
@@ -267,6 +280,7 @@ Deno.serve(async (req) => {
         normalized_name: normalizeName(fullName),
         position,
         ...positionMetadata(position, positionOptions),
+        secondary_position: secondaryPosition || undefined,
         dominant_leg: mapDominantLeg(legRaw),
         nationality: nationality || undefined,
         residence_zone: residenceZone,
@@ -274,18 +288,29 @@ Deno.serve(async (req) => {
         current_residence: residence || undefined,
         housing_type: mapHousingType(housingRaw),
         birth_date: birthDate || undefined,
+        birth_place: birthPlace || undefined,
+        province: provinceRaw || undefined,
+        city: cityRaw || undefined,
+        full_address: fullAddressRaw || undefined,
+        phone_number: phoneNumber || undefined,
         jersey_number: jerseyNumber,
+        contract_status: contractStatus,
+        notes: notesRaw || undefined,
         division: targetSquadName,
         squad_id: resolvedSquad.id,
         squad_name: targetSquadName,
-        status: "Disponible",
-        active: true,
+        // El estado y el flag "activo" solo se fuerzan al CREAR un jugador nuevo.
+        // Reimportar una planilla para actualizar jugadores existentes no debe
+        // resetear su estado real (lesionado, suspendido, etc.) ni reactivarlos
+        // si estaban dados de baja — por eso en un update solo se toca "status"
+        // cuando la fila trae un valor reconocido, y "active" nunca se pisa.
+        ...(isUpdate
+          ? (statusFromRow ? { status: statusFromRow } : {})
+          : { status: statusFromRow || "Disponible", active: true }),
       };
       Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
 
-      const sameName = byName.get(normalizeName(fullName));
-      let player = byDni.get(dni) || (sameName && !normalizeDni(sameName.dni || sameName.document_number) ? sameName : null);
-      if (player) {
+      if (isUpdate) {
         player = await base44.entities.Player.update(player.id, payload);
         updated += 1;
       } else {
