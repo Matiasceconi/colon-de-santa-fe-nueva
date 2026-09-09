@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Download, Plus, X, Camera, Upload, BookOpen } from "lucide-react";
+import * as XLSX from "xlsx";
+import {
+  PLAYER_COLUMNS,
+  playerColumnLabels,
+  playerColumnWidths,
+  playerExportRowArray,
+  writeControlAutoFormulas,
+  extendSheetRange,
+} from "@/lib/playerSpreadsheet";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { usePlayerCard360 } from "@/components/player/PlayerCard360Context";
 import { resolvePlayerType, resolvePositionGroup } from "@/components/squad/squadConstants";
@@ -289,35 +298,28 @@ export default function Players() {
     toast({ title: "Jugador eliminado" });
   }
 
-  function exportCsv() {
-    const rows = visiblePlayers.map((player) => {
-      const membership = currentMembership(player);
-      return {
-        player_id: player.id,
-        nombre: player.first_name || "",
-        apellido: player.last_name || "",
-        dni: player.dni || player.document_number || "",
-        fecha_nacimiento: player.birth_date || "",
-        edad: ageFromBirth(player.birth_date),
-        posicion: player.position || "",
-        nacionalidad: player.nationality || "",
-        perfil: player.dominant_leg || "",
-        zona: playerResidenceZone(player) || "",
-        pension: playerHousingStatus(player),
-        contrato: playerContractStatus(player),
-        tipo: player.player_type || resolvePlayerType(player.position),
-        plantel: membership?.squad_name || player.division || "",
-        estado: player.status || "",
-      };
-    });
-    const headers = ["player_id", "nombre", "apellido", "dni", "fecha_nacimiento", "edad", "posicion", "nacionalidad", "perfil", "zona", "pension", "contrato", "tipo", "plantel", "estado"]; 
-    const csv = [headers.join(","), ...rows.map((row) => headers.map((header) => `"${String(row[header]).replaceAll('"', '""')}"`).join(","))].join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "jugadores.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+  function exportXlsx() {
+    // Mismo layout de columnas que la plantilla de importación: el archivo
+    // exportado se puede editar y reimportar directamente para actualizar
+    // a estos mismos jugadores (por DNI o nombre), sin perder su estado real.
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const rows = visibleRows.map(({ player, membership }) => playerExportRowArray(player, membership?.squad_name || player.division || ""));
+    const lastCol = PLAYER_COLUMNS.length - 1;
+    const aoa = [
+      [`${clubBrand?.name || "Club"} · Exportación de jugadores · ${todayStr} · ${rows.length} jugadores`],
+      playerColumnLabels(),
+      ...rows,
+    ];
+    const sheet = XLSX.utils.aoa_to_sheet(aoa);
+    sheet["!cols"] = playerColumnWidths();
+    sheet["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } }];
+    if (rows.length > 0) {
+      writeControlAutoFormulas(sheet, 3, 2 + rows.length);
+      extendSheetRange(sheet, 2 + rows.length, lastCol);
+    }
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, "Carga de jugadores");
+    XLSX.writeFile(workbook, `jugadores_${todayStr}.xlsx`);
   }
 
   if (!canSeePath("/players")) return <div className="flex items-center justify-center h-64 text-zinc-500 text-sm">No tenés permiso para ver Jugadores.</div>;
@@ -332,7 +334,7 @@ export default function Players() {
         </div>
         <div className="flex flex-wrap gap-2">
           {isAdmin && <button onClick={startPageTour} className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg text-sm hover:bg-zinc-800"><BookOpen size={15} /> Guía interactiva</button>}
-          {canExport && <button onClick={exportCsv} className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg text-sm hover:bg-zinc-800"><Download size={15} /> Exportar</button>}
+          {canExport && <button onClick={exportXlsx} className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg text-sm hover:bg-zinc-800"><Download size={15} /> Exportar Excel</button>}
           {canCreate && <button data-tour="players-import" onClick={() => setShowImport(true)} className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-semibold hover:bg-cyan-500"><Upload size={15} /> Importar Excel</button>}
           {canCreate && <button data-tour="players-new" onClick={() => setEditing({})} className="flex items-center gap-2 px-4 py-2 bg-white text-zinc-900 rounded-lg text-sm font-semibold hover:bg-zinc-200"><Plus size={15} /> Nuevo jugador</button>}
         </div>
