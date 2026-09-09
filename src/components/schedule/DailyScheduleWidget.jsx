@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { Activity, AlertCircle, Apple, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Dumbbell, Gauge, HeartPulse, Loader2, MapPin, Pencil, Plus, RefreshCw, Shirt, Trash2, Users, Video, X } from 'lucide-react';
+import { DEFAULT_CLUB_TIMEZONE, clubDateKey, clubTimeHHMM } from '@/lib/clubTime';
 
 const TYPE_CFG = {
   training: { label: 'Sesión', icon: Dumbbell, tone: 'emerald' },
@@ -37,10 +38,10 @@ const AREAS = [
 ];
 const TARGETS = [['squad','Todo el plantel'],['specific_players','Jugadores específicos'],['staff','Solo staff'],['mixed','Staff + jugadores']];
 
-function todayISO() { return new Date().toISOString().slice(0,10); }
+function todayISO() { return clubDateKey(DEFAULT_CLUB_TIMEZONE); }
 function addDays(date, amount) { const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate()+amount); return d.toISOString().slice(0,10); }
 function prettyDate(date) { try { return new Date(`${date}T12:00:00`).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}); } catch { return date; } }
-function nowHHMM() { return new Date().toTimeString().slice(0,5); }
+function nowHHMM() { return clubTimeHHMM(DEFAULT_CLUB_TIMEZONE); }
 function displayStatus(item, selectedDate) {
   const persisted = item.derived_status || item.status || 'planned';
   if (persisted !== 'planned' || selectedDate !== todayISO() || !item.start_time) return persisted;
