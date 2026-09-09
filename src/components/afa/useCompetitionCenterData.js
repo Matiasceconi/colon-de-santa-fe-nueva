@@ -24,11 +24,20 @@ export function normalizeCompetitionText(value = "") {
     .replace(/\s+/g, " ");
 }
 
+const TEAM_CANONICAL_ALIASES = new Map([
+  ["colon de santa fe", "colon"],
+  ["colon santa fe", "colon"],
+  ["union de santa fe", "union"],
+  ["union santa fe", "union"],
+]);
+
 function normalizeTeam(value = "") {
-  return normalizeCompetitionText(value)
+  const normalized = normalizeCompetitionText(value)
     .replace(/\bclub\b|\batletico\b|\batletica\b|\basociacion\b|\bca\b/g, " ")
+    .replace(/\breserva\b|\bproyeccion\b/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+  return TEAM_CANONICAL_ALIASES.get(normalized) || normalized;
 }
 
 function buildAliases(profile, brand) {
@@ -89,8 +98,8 @@ function dedupeMatches(rows) {
     const key = [
       normalizeCompetitionText(match.competition),
       matchDateValue(match),
-      normalizeTeam(match.homeTeam).replace(/\breserva\b/g, "").trim(),
-      normalizeTeam(match.awayTeam).replace(/\breserva\b/g, "").trim(),
+      normalizeTeam(match.homeTeam),
+      normalizeTeam(match.awayTeam),
     ].join("::");
     const current = map.get(key);
     if (!current) {
