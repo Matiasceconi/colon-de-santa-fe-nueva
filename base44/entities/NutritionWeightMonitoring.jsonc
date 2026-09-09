@@ -1,0 +1,116 @@
+{
+  "name": "NutritionWeightMonitoring",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "squad_id": {
+      "type": "string"
+    },
+    "season_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "weekdays",
+        "custom"
+      ],
+      "default": "daily"
+    },
+    "weekdays": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "default": []
+    },
+    "preferred_moment": {
+      "type": "string",
+      "enum": [
+        "waking",
+        "pre_breakfast",
+        "pre_training",
+        "other"
+      ],
+      "default": "waking"
+    },
+    "measurement_conditions": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "target_weight_kg": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "paused",
+        "cancelled"
+      ],
+      "default": "active"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "created_by_name": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "player_id",
+    "start_date",
+    "end_date"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
