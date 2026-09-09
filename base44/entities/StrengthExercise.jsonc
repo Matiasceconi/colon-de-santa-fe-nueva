@@ -49,7 +49,7 @@
         "role": "admin"
       }
     },
-    "read": null,
+    "read": true,
     "update": {
       "user_condition": {
         "role": "admin"
