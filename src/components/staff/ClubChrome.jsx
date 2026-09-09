@@ -3,7 +3,7 @@ import { Bell, BookOpen, CalendarDays, ChevronDown, LogOut, User, UserCog } from
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import { startPageTour } from "@/components/tour/PageTour";
+import { openHelpCenter } from "@/components/tour/HelpCenter";
 import SquadSelector from "@/components/workspace/SquadSelector";
 import UserProfileModal from "@/components/workspace/UserProfileModal";
 
@@ -147,7 +147,7 @@ export function ClubTopHeader() {
           </span>
           <button
             type="button"
-            onClick={startPageTour}
+            onClick={openHelpCenter}
             className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-zinc-200 transition hover:bg-white/10"
           >
             <BookOpen size={15} style={{ color: "var(--club-accent)" }} />
