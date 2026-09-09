@@ -679,7 +679,7 @@ function OperationalSchedule() {
   // ── WEEK VIEW ──
   function renderWeek() {
     const days = getWeekDays();
-    const today = moment().format("YYYY-MM-DD");
+    const today = todayStr;
 
     return (
       <>
@@ -763,7 +763,7 @@ function OperationalSchedule() {
   // ── AGENDA VIEW ──
   function renderAgenda() {
     const days = getWeekDays();
-    const today = moment().format("YYYY-MM-DD");
+    const today = todayStr;
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between rounded-2xl border border-white/[0.07] bg-zinc-950 px-4 py-3">
@@ -796,7 +796,7 @@ function OperationalSchedule() {
     const days = [];
     let day = gridStart.clone();
     while (day.isSameOrBefore(gridEnd, "day")) { days.push(day.clone()); day.add(1, "day"); }
-    const today = moment().format("YYYY-MM-DD");
+    const today = todayStr;
 
     return (
       <>
@@ -862,7 +862,7 @@ function OperationalSchedule() {
           <p className="text-zinc-500 text-sm mt-1">Sesiones, partidos y agenda operativa en una única línea de tiempo.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={() => { const today = moment().format("YYYY-MM-DD"); setTimelineDate(today); setCurrentWeekStart(getCustomWeekStart(moment(), weekStartDay)); setCurrentMonth(moment().startOf("month")); }} className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-400 hover:text-white"><CalendarDays size={13}/>Hoy</button>
+          <button onClick={() => { setTimelineDate(todayStr); setCurrentWeekStart(getCustomWeekStart(moment(todayStr), weekStartDay)); setCurrentMonth(moment(todayStr).startOf("month")); }} className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-400 hover:text-white"><CalendarDays size={13}/>Hoy</button>
           <div className="flex items-center bg-zinc-800 rounded-lg p-1 gap-1">
             <button onClick={() => setView("timeline")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === "timeline" ? "bg-white text-zinc-900" : "text-zinc-400 hover:text-white"}`}>Cronograma</button>
             <button onClick={() => setView("agenda")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === "agenda" ? "bg-white text-zinc-900" : "text-zinc-400 hover:text-white"}`}>Agenda</button>
@@ -888,7 +888,7 @@ function OperationalSchedule() {
             {newMenuOpen && <>
               <button aria-label="Cerrar menú" onClick={() => setNewMenuOpen(false)} className="fixed inset-0 z-30 cursor-default" />
               <div className="absolute right-0 top-11 z-40 w-64 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 p-1.5 shadow-2xl">
-                <button onClick={() => { setNewMenuOpen(false); openNew(moment().format("YYYY-MM-DD")); }} className="w-full rounded-xl px-3 py-2.5 text-left hover:bg-zinc-800"><p className="text-xs font-black text-white">Evento operativo</p><p className="mt-0.5 text-[10px] text-zinc-500">Comida, viaje, reunión, video, control u otro.</p></button>
+                <button onClick={() => { setNewMenuOpen(false); openNew(todayStr); }} className="w-full rounded-xl px-3 py-2.5 text-left hover:bg-zinc-800"><p className="text-xs font-black text-white">Evento operativo</p><p className="mt-0.5 text-[10px] text-zinc-500">Comida, viaje, reunión, video, control u otro.</p></button>
                 <button onClick={() => navigate("/sessions?new=1")} className="w-full rounded-xl px-3 py-2.5 text-left hover:bg-zinc-800"><p className="text-xs font-black text-emerald-300">Sesión</p><p className="mt-0.5 text-[10px] text-zinc-500">Crear desde Sesiones para mantener una sola fuente.</p></button>
                 <button onClick={() => navigate("/matches")} className="w-full rounded-xl px-3 py-2.5 text-left hover:bg-zinc-800"><p className="text-xs font-black text-red-300">Partido</p><p className="mt-0.5 text-[10px] text-zinc-500">Crear o gestionar desde Partidos.</p></button>
               </div>
@@ -903,8 +903,8 @@ function OperationalSchedule() {
           squadId={activeSquadId}
           squadName={activeSquad?.name || ""}
           seasonId={activeSeasonId || activeSquad?.season || ""}
-          date={moment().format("YYYY-MM-DD")}
-          onOpenFull={() => { setTimelineDate(moment().format("YYYY-MM-DD")); setView("timeline"); }}
+          date={todayStr}
+          onOpenFull={() => { setTimelineDate(todayStr); setView("timeline"); }}
         />
       )}
 
