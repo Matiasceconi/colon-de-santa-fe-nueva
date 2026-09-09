@@ -69,8 +69,8 @@ export default function NutritionManualSheet({ players = [], assessments = [], i
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <div className="flex items-center gap-2 text-emerald-300"><FilePenLine size={16} /><span className="text-xs font-semibold uppercase tracking-[0.16em]">Planilla dentro del sistema</span></div>
-            <h2 className="mt-2 text-xl font-bold text-white">Carga y edición manual de Nutrición</h2>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-500">La integración existente se mantiene, pero el nutricionista puede crear y corregir controles directamente en PerformancePitch. Los registros manuales alimentan los mismos gráficos, evoluciones e informes.</p>
+            <h2 className="mt-2 text-xl font-bold text-white">Antropometría y composición corporal</h2>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-500">Esta sección queda dedicada a antropometría: peso, talla, pliegues y composición corporal. Los controles nutricionales generales, alimentación e hidratación se cargan en sus secciones específicas.</p>
           </div>
           {canCreate && <button onClick={() => setCreating(true)} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-zinc-900 hover:bg-zinc-200"><Plus size={15} /> Nuevo control</button>}
         </div>
@@ -86,14 +86,14 @@ export default function NutritionManualSheet({ players = [], assessments = [], i
       </div>
 
       <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
-        <div className="border-b border-zinc-800 px-4 py-3"><p className="text-sm font-bold text-white">Planilla nutricional</p><p className="mt-0.5 text-xs text-zinc-600">{rows.length} controles visibles · {activeSquad?.name || "Plantel"}</p></div>
+        <div className="border-b border-zinc-800 px-4 py-3"><p className="text-sm font-bold text-white">Planilla antropométrica</p><p className="mt-0.5 text-xs text-zinc-600">{rows.length} controles visibles · {activeSquad?.name || "Plantel"}</p></div>
         <div className="overflow-x-auto">
           <table className="min-w-[1750px] w-full text-xs">
             <thead className="bg-zinc-950/60 text-left text-[10px] uppercase tracking-wide text-zinc-600">
               <tr>
                 <th className="p-3">Jugador</th><th className="p-3">Fecha</th><th className="p-3">Talla</th><th className="p-3">Peso</th>
                 <th className="p-3">Tríceps</th><th className="p-3">Subesc.</th><th className="p-3">Supraesp.</th><th className="p-3">Abdominal</th><th className="p-3">Muslo</th><th className="p-3">Pantorrilla</th><th className="p-3">6P</th>
-                <th className="p-3">IMO</th><th className="p-3">% MM</th><th className="p-3">Kg MM</th><th className="p-3">% Grasa</th><th className="p-3">Kg grasa</th><th className="p-3">Lectura</th><th className="p-3">Origen</th><th className="p-3"></th>
+                <th className="p-3">IMO</th><th className="p-3">% MM</th><th className="p-3">Kg MM</th><th className="p-3">% Grasa</th><th className="p-3">Kg grasa</th><th className="p-3">Interpretación</th><th className="p-3">Origen</th><th className="p-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -107,9 +107,9 @@ export default function NutritionManualSheet({ players = [], assessments = [], i
                   <td className="p-3 text-zinc-300">{fmt(row.talla)}</td><td className="p-3 font-semibold text-white">{fmt(row.peso)}</td>
                   <td className="p-3 text-zinc-400">{fmt(row.triceps)}</td><td className="p-3 text-zinc-400">{fmt(row.subescapular)}</td><td className="p-3 text-zinc-400">{fmt(row.supraespinal)}</td><td className="p-3 text-zinc-400">{fmt(row.abdominal)}</td><td className="p-3 text-zinc-400">{fmt(row.muslo)}</td><td className="p-3 text-zinc-400">{fmt(row.pantorrilla)}</td><td className="p-3 font-semibold text-orange-300">{fmt(row.sumatoria_6p)}</td>
                   <td className="p-3 text-emerald-300">{fmt(row.imo, 2)}</td><td className="p-3 text-zinc-300">{fmt(row.porcentaje_masa_muscular)}</td><td className="p-3 text-zinc-300">{fmt(row.kg_masa_muscular)}</td><td className="p-3 text-pink-300">{fmt(row.porcentaje_grasa)}</td><td className="p-3 text-zinc-300">{fmt(row.kg_grasa)}</td>
-                  <td className="p-3">{reading?.reading_status_id ? <ReadingStatusBadge statusId={reading.reading_status_id} statusMap={statusMap} /> : <span className="text-zinc-700">Sin lectura</span>}</td>
+                  <td className="p-3">{reading?.reading_status_id ? <ReadingStatusBadge statusId={reading.reading_status_id} statusMap={statusMap} /> : <span className="text-zinc-700">Sin interpretación</span>}</td>
                   <td className="p-3"><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-semibold ${origin.cls}`}>{origin.label}</span>{row.edited_at && <p className="mt-1 text-[9px] text-zinc-700">{moment(row.edited_at).format("DD/MM HH:mm")}</p>}</td>
-                  <td className="p-3"><div className="flex items-center gap-1.5">{canEdit && <button onClick={() => setEditing(row)} className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white" title="Editar medición"><Pencil size={13} /></button>}{canManageReading && <button onClick={() => setReadingAssessment(row)} className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-emerald-300" title="Lectura nutricional"><Stethoscope size={13} /></button>}</div></td>
+                  <td className="p-3"><div className="flex items-center gap-1.5">{canEdit && <button onClick={() => setEditing(row)} className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white" title="Editar medición"><Pencil size={13} /></button>}{canManageReading && <button onClick={() => setReadingAssessment(row)} className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-emerald-300" title="Interpretación antropométrica"><Stethoscope size={13} /></button>}</div></td>
                 </tr>;
               })}
               {!rows.length && <tr><td colSpan={19} className="p-12 text-center text-sm text-zinc-600">No hay controles con los filtros seleccionados.</td></tr>}
