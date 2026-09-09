@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, ArrowLeft, Loader2, User, Lock, Mail, CheckCircle2 } from "lucide-react";
-import GoogleIcon from "@/components/GoogleIcon";
 
 export default function ActivatePlayer() {
   const [step, setStep] = useState(1); // 1=verify, 2=register, 3=otp, 4=success
@@ -18,38 +17,7 @@ export default function ActivatePlayer() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [activationToken, setActivationToken] = useState("");
   const activationTokenRef = useRef("");
-
-  // Manejar retorno de Google: si hay token en la URL, completar activación
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-    const google = urlParams.get("google");
-    if (token && google) {
-      activationTokenRef.current = token;
-      setActivationToken(token);
-      // Esperar a que el AuthProvider reconozca la sesión
-      const tryComplete = async () => {
-        try {
-          const res = await base44.functions.invoke("completePlayerActivation", { activation_token: token });
-          const result = res.data || res;
-          if (result.ok) {
-            setStep(4);
-            setTimeout(() => { window.location.href = "/login?access=player"; }, 2000);
-          } else if (result.error) {
-            setError(result.error);
-            setStep(1);
-          }
-        } catch (e) {
-          setError("No pudimos completar la activación con Google. Intentá nuevamente.");
-          setStep(1);
-        }
-      };
-      // Dar tiempo a que el token se establezca
-      setTimeout(tryComplete, 1500);
-    }
-  }, []);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -115,16 +83,6 @@ export default function ActivatePlayer() {
       setError("El código ingresado no es correcto. Verificá e intentá nuevamente.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleActivate = () => {
-    setError("");
-    const returnUrl = `${window.location.origin}/activar-jugador?token=${encodeURIComponent(activationTokenRef.current)}&google=true`;
-    try {
-      base44.auth.loginWithProvider("google", returnUrl);
-    } catch (err) {
-      setError("No pudimos ingresar con Google. Intentá nuevamente o utilizá email y contraseña.");
     }
   };
 
@@ -226,22 +184,6 @@ export default function ActivatePlayer() {
               {error && (
                 <div className="mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-sm">{error}</div>
               )}
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleGoogleActivate}
-                className="w-full h-11 bg-white hover:bg-zinc-100 text-zinc-900 border-zinc-300 font-semibold flex items-center justify-center gap-2.5 mb-4"
-              >
-                <GoogleIcon className="w-5 h-5" />
-                Continuar con Google
-              </Button>
-
-              <div className="flex items-center gap-3 mb-5">
-                <div className="flex-1 h-px bg-zinc-800" />
-                <span className="text-xs text-zinc-500 whitespace-nowrap">o con email y contraseña</span>
-                <div className="flex-1 h-px bg-zinc-800" />
-              </div>
 
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-1.5">
