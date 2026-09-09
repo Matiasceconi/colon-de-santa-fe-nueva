@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { fileToTransparentPng } from '@/lib/playerPhotoPng';
+import { base44 } from '@/api/base44Client';
 
 // name=src/components/PlayerImageUploader.jsx
+//
+// NOTE: This component previously posted to a local Express route
+// (server/routes/players-upload.js) that was never wired into the app —
+// express/multer aren't even project dependencies, so the request always
+// failed in every environment. It also had no auth check and built its
+// file path from an unvalidated `playerId`, which is a path-traversal risk.
+// That dead route has been removed. Uploads now go through Base44's own
+// file storage integration, the same one used everywhere else in this app
+// (see base44.integrations.Core.UploadFile usages), and persist to the
+// Player record via the SDK, which enforces the entity's own RLS.
 export default function PlayerImageUploader({ playerId, currentImageUrl, onSaved, currentUser }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(currentImageUrl || '');
@@ -37,32 +48,14 @@ export default function PlayerImageUploader({ playerId, currentImageUrl, onSaved
 
   async function upload() {
     if (!file) return alert('Seleccioná una imagen primero.');
+    if (!playerId) return alert('Falta el jugador.');
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append('image', file);
-      fd.append('playerId', playerId);
-
-      const res = await fetch('/api/players/upload-avatar', { method: 'POST', body: fd });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || 'Error al subir la imagen');
-      }
-      const { imageUrl } = await res.json();
-
-      // Optionally PATCH player to set avatarUrl if upload endpoint doesn't do it
-      try {
-        await fetch(`/api/players/${playerId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatarUrl: imageUrl })
-        });
-      } catch (err) {
-        // Not fatal; server/upload endpoint may already set the field
-        console.warn('Could not PATCH player after upload', err);
-      }
-
-      onSaved && onSaved(imageUrl);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const saved = await base44.entities.Player.update(playerId, { photo_url: file_url });
+      setPreview(file_url);
+      setFile(null);
+      onSaved && onSaved(file_url, saved);
     } catch (err) {
       console.error(err);
       alert('Error al subir la imagen. ' + (err.message || ''));
