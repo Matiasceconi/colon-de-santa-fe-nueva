@@ -55,17 +55,6 @@ function normalizeName(value) {
   return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 }
 
-function ageFromBirth(date) {
-  if (!date) return "—";
-  const birth = new Date(date);
-  if (Number.isNaN(birth.getTime())) return "—";
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age -= 1;
-  return age;
-}
-
 function PlayerEditor({ player, onClose, onSave, positionOptions = [] }) {
   const [form, setForm] = useState(player ? {
     ...EMPTY_PLAYER,
