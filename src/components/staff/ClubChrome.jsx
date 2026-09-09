@@ -1,10 +1,11 @@
-import React from "react";
-import { Bell, BookOpen, CalendarDays, ChevronDown } from "lucide-react";
+import React, { useState } from "react";
+import { Bell, BookOpen, CalendarDays, ChevronDown, LogOut, User, UserCog } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 import { startPageTour } from "@/components/tour/PageTour";
 import SquadSelector from "@/components/workspace/SquadSelector";
+import UserProfileModal from "@/components/workspace/UserProfileModal";
 
 export const CLUB_NAV_SECTIONS = [
   {
@@ -113,8 +114,10 @@ function currentLabel(pathname) {
 
 export function ClubTopHeader() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { clubBrand, activeSquad } = useWorkspace();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const label = currentLabel(location.pathname);
   const season = clubBrand?.season || activeSquad?.season || new Date().getFullYear();
 
@@ -158,15 +161,57 @@ export function ClubTopHeader() {
           >
             <Bell size={16} />
           </button>
-          <div className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-1.5 pr-2">
-            <ClubShield className="h-7 w-7" />
-            <span className="hidden max-w-36 truncate text-xs font-semibold text-white xl:block">
-              {user?.full_name || user?.email || "Usuario"}
-            </span>
-            <ChevronDown size={13} className="hidden text-zinc-500 xl:block" />
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((value) => !value)}
+              className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-1.5 pr-2 transition hover:bg-white/10"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+            >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-800">
+                {user?.photo_url ? (
+                  <img src={user.photo_url} className="h-full w-full object-cover" alt="" />
+                ) : (
+                  <User size={13} className="text-zinc-400" />
+                )}
+              </span>
+              <span className="hidden max-w-36 truncate text-xs font-semibold text-white sm:block">
+                {user?.full_name || user?.email || "Usuario"}
+              </span>
+              <ChevronDown size={13} className={`hidden text-zinc-500 transition sm:block ${menuOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 overflow-hidden rounded-xl border border-white/10 bg-zinc-900 shadow-2xl shadow-black/40">
+                  <div className="border-b border-white/10 px-3.5 py-3">
+                    <p className="truncate text-xs font-bold text-white">{user?.full_name || "Usuario"}</p>
+                    <p className="truncate text-[11px] text-zinc-500">{user?.email}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setMenuOpen(false); setShowProfile(true); }}
+                    className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs font-semibold text-zinc-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <UserCog size={14} /> Editar perfil
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setMenuOpen(false); logout("/"); }}
+                    className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
+                  >
+                    <LogOut size={14} /> Cerrar sesión
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {showProfile && <UserProfileModal onClose={() => setShowProfile(false)} />}
     </header>
   );
 }
