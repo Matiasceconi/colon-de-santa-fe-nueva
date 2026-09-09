@@ -551,8 +551,8 @@ function OperationalSchedule() {
 
   // Re-compute week start when weekStartDay changes
   useEffect(() => {
-    setCurrentWeekStart(getCustomWeekStart(moment(), weekStartDay));
-  }, [weekStartDay]);
+    setCurrentWeekStart(getCustomWeekStart(moment(todayStr), weekStartDay));
+  }, [weekStartDay, todayStr]);
 
   function handleChangeStartDay(day) {
     saveWeekStartDay(day);
