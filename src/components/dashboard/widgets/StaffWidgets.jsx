@@ -115,10 +115,9 @@ export function WellnessPriorityWidget({ widget, onConfigChange }) {
 }
 
 export function TrainingTodayWidget() {
-  const { trainingSessions, staffLoading } = useDashboardData();
-  const today = moment().format("YYYY-MM-DD");
-  const todaySessions = (trainingSessions || []).filter((s) => s.date === today);
-  const upcoming = (trainingSessions || []).filter((s) => s.date > today).slice(0, 3);
+  const { trainingSessions, staffLoading, todayKey } = useDashboardData();
+  const todaySessions = (trainingSessions || []).filter((s) => s.date === todayKey);
+  const upcoming = (trainingSessions || []).filter((s) => s.date > todayKey).slice(0, 3);
   const display = todaySessions.length ? todaySessions : upcoming;
 
   if (staffLoading) return <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 animate-pulse h-32" />;
@@ -270,9 +269,25 @@ export function QuickLinksWidget() {
 }
 
 export function SessionDayMapWidget() {
-  const { todaySessionPlayers, trainingSessions, players, staffLoading } = useDashboardData();
-  const today = moment().format("YYYY-MM-DD");
-  const todaySession = (trainingSessions || []).find((s) => s.date === today);
+  const { todaySessionPlayers, trainingSessions, players, staffLoading, todayKey, activeSquad } = useDashboardData();
+  // Mismo criterio que usa todaySessionPlayers para armar el roster (fecha del
+  // club + plantel activo), así el título/plantel que se muestra siempre
+  // coincide con los jugadores que aparecen en el mapa. Antes se tomaba
+  // "cualquier" sesión de hoy con .find(), sin filtrar por plantel y usando la
+  // hora local del navegador en vez de la zona horaria configurada del club.
+  const todaySquadSessions = (trainingSessions || []).filter(
+    (s) => s.date === todayKey && (!activeSquad?.id || !s.squad_id || s.squad_id === activeSquad.id)
+  );
+  const todaySession = todaySquadSessions[0];
+  const sessionForMap = todaySquadSessions.length > 1
+    ? {
+        ...todaySession,
+        title: todaySquadSessions
+          .map((s) => s.title || (s.session_number ? `Sesión ${s.session_number}` : "Sesión"))
+          .filter(Boolean)
+          .join(" + "),
+      }
+    : todaySession;
 
   const playerPhotos = {};
   (players || []).forEach((p) => { if (p.photo_url) playerPhotos[p.id] = p.photo_url; });
@@ -290,5 +305,5 @@ export function SessionDayMapWidget() {
     );
   }
 
-  return <SessionDayMap players={todaySessionPlayers} playerPhotos={playerPhotos} session={todaySession} />;
+  return <SessionDayMap players={todaySessionPlayers} playerPhotos={playerPhotos} session={sessionForMap} />;
 }
