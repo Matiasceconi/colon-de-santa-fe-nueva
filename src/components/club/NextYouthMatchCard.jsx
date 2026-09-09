@@ -96,24 +96,41 @@ export default function NextYouthMatchCard() {
 
   const next = useMemo(() => {
     if (!fixtures.length) return null;
-    const maxRound = Math.max(...fixtures.map((f) => f.fixtureRound || 0));
-    const roundFixtures = fixtures.filter((f) => f.fixtureRound === maxRound);
+
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const datedFixtures = fixtures
+      .map((fixture) => ({ ...fixture, _date: fixture.date || fixture.matchDate || "" }))
+      .filter((fixture) => fixture._date && fixture._date >= today)
+      .sort((a, b) => a._date.localeCompare(b._date) || Number(a.fixtureRound || 999) - Number(b.fixtureRound || 999));
+
+    if (!datedFixtures.length) return null;
+    const first = datedFixtures[0];
+    const date = first._date;
+    const round = first.fixtureRound || 0;
+    const roundFixtures = datedFixtures.filter((fixture) =>
+      fixture._date === date && (!round || Number(fixture.fixtureRound || 0) === Number(round))
+    );
     if (!roundFixtures.length) return null;
-    const date = roundFixtures[0]?.date || roundFixtures[0]?.matchDate;
-    const isHomeAny = roundFixtures.some((f) => f.isHome);
+
+    const isHomeAny = roundFixtures.some((fixture) => fixture.isHome);
     const rival = isHomeAny
-      ? roundFixtures.find((f) => f.isHome)?.awayTeam || roundFixtures[0]?.awayTeam
-      : roundFixtures.find((f) => !f.isHome)?.homeTeam || roundFixtures[0]?.homeTeam;
+      ? roundFixtures.find((fixture) => fixture.isHome)?.awayTeam || roundFixtures[0]?.awayTeam
+      : roundFixtures.find((fixture) => !fixture.isHome)?.homeTeam || roundFixtures[0]?.homeTeam;
     const rivalLogo = roundFixtures[0]?.teamLogo;
 
     const grandes = roundFixtures
-      .filter((f) => f.isHome)
+      .filter((fixture) => fixture.isHome)
       .sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category));
     const chicas = roundFixtures
-      .filter((f) => !f.isHome)
+      .filter((fixture) => !fixture.isHome)
       .sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category));
 
-    return { round: maxRound, date, rival, rivalLogo, grandes, chicas };
+    return { round, date, rival, rivalLogo, grandes, chicas };
   }, [fixtures]);
 
   if (loading) {
