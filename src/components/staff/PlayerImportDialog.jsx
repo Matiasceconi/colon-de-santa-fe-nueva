@@ -107,7 +107,8 @@ export default function PlayerImportDialog({ open, onOpenChange, onSuccess, squa
     ];
     // Fila 7 (la primera de datos, con el ejemplo) en adelante: fórmula de
     // control automático precargada para que se calcule sola al completar.
-    writeControlAutoFormulas(sheet, 7, 6 + TEMPLATE_DATA_ROWS);
+    const exampleRowArray = playerExampleRowArray();
+    writeControlAutoFormulas(sheet, 7, 6 + TEMPLATE_DATA_ROWS, (r) => (r === 7 ? exampleRowArray : null));
     extendSheetRange(sheet, 6 + TEMPLATE_DATA_ROWS, lastCol);
 
     const instructionsSheet = buildInstructionsSheet(clubName);
