@@ -13,6 +13,8 @@ import DemoTopHeader from "@/components/demo/DemoTopHeader";
 import DemoTutorialCenter from "@/components/demo/DemoTutorialCenter";
 import { DemoClubWatermark, demoThemeStyle } from "@/components/demo/DemoClubIdentity";
 import { ClubTopHeader, ClubWatermark } from "@/components/staff/ClubChrome";
+import GlobalPageTourHost from "@/components/tour/GlobalPageTourHost";
+import HelpCenter from "@/components/tour/HelpCenter";
 
 const SIDEBAR_STORAGE_KEY = "performancepitch_sidebar_collapsed_v1";
 const SidebarCollapseContext = createContext({ collapsed: false, setCollapsed: () => {} });
@@ -121,6 +123,9 @@ export default function Layout() {
             </PageErrorBoundary>
           </div>
         </main>
+
+        <GlobalPageTourHost />
+        <HelpCenter />
         </div>
         </SidebarCollapseContext.Provider>
         );
