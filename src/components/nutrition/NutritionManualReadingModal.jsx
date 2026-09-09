@@ -66,7 +66,7 @@ export default function NutritionManualReadingModal({ assessment, interpretation
       toast({ title: interpretation?.id ? "Interpretación actualizada" : "Interpretación creada" });
       onSaved();
     } catch (error) {
-      toast({ title: "No se pudo guardar la lectura", description: error?.message || "Intentá nuevamente.", variant: "destructive" });
+      toast({ title: "No se pudo guardar la interpretación", description: error?.message || "Intentá nuevamente.", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -90,7 +90,7 @@ export default function NutritionManualReadingModal({ assessment, interpretation
           </div>
           <div><label className="mb-1 block text-xs text-zinc-400">Responsable</label><Input value={form.responsible_user_id} onChange={(e) => setForm((current) => ({ ...current, responsible_user_id: e.target.value }))} placeholder="Nombre del nutricionista" className="border-zinc-700 bg-zinc-800 text-white" /></div>
           <div><label className="mb-1 block text-xs text-zinc-400">Observación</label><Textarea rows={4} value={form.observation} onChange={(e) => setForm((current) => ({ ...current, observation: e.target.value }))} className="resize-none border-zinc-700 bg-zinc-800 text-white" placeholder="Interpretación, objetivos, observaciones y próximos pasos..." /></div>
-          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={onClose} className="border-zinc-700 text-zinc-300">Cancelar</Button><Button type="submit" disabled={saving} className="bg-white text-zinc-900 hover:bg-zinc-200">{saving ? "Guardando..." : "Guardar lectura"}</Button></div>
+          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={onClose} className="border-zinc-700 text-zinc-300">Cancelar</Button><Button type="submit" disabled={saving} className="bg-white text-zinc-900 hover:bg-zinc-200">{saving ? "Guardando..." : "Guardar interpretación"}</Button></div>
         </form>
       </DialogContent>
     </Dialog>
