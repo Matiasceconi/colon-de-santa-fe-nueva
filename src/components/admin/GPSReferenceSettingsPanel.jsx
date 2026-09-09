@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Activity, ArrowDown, ArrowUp, BookOpen, CheckCircle2, Plus, RotateCcw, Save, Settings2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useWorkspace } from "@/lib/WorkspaceContext";
-import PageTour, { startPageTour } from "@/components/tour/PageTour";
+import PageTour from "@/components/tour/PageTour";
 import { GPS_REFERENCES_TOUR } from "@/lib/pageTours";
 import {
   DEFAULT_GPS_REFERENCE_CONFIG,
@@ -272,12 +272,14 @@ export default function GPSReferenceSettingsPanel({ isAdmin = false }) {
     if (step?.tab) setTab(step.tab);
   }
 
+  const [tourSignal, setTourSignal] = useState(0);
+
   if (!squadId) return <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4 text-sm text-amber-200">Seleccioná un plantel activo para configurar sus referencias GPS.</div>;
   if (loading) return <div className="py-10 text-center text-sm text-zinc-500">Cargando configuración GPS…</div>;
 
   return (
     <div className="space-y-4" data-tour="gps-ref-root">
-      <PageTour pageKey={`gps-references-${squadId}-v1`} steps={GPS_REFERENCES_TOUR} autoStart={isAdmin && !hasStoredConfig} onStepChange={handleTourStep} />
+      <PageTour pageKey={`gps-references-${squadId}-v1`} steps={GPS_REFERENCES_TOUR} autoStart={isAdmin && !hasStoredConfig} onStepChange={handleTourStep} standalone startSignal={tourSignal} />
 
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-4">
         <div>
@@ -286,7 +288,7 @@ export default function GPSReferenceSettingsPanel({ isAdmin = false }) {
           {!hasStoredConfig && <p className="mt-2 inline-flex rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[10px] font-bold text-blue-300">Usando perfil híbrido recomendado hasta que guardes</p>}
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={startPageTour} className="inline-flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs font-bold text-zinc-300 hover:text-white"><BookOpen size={14} />Guía interactiva</button>
+          <button type="button" onClick={() => setTourSignal((value) => value + 1)} className="inline-flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs font-bold text-zinc-300 hover:text-white"><BookOpen size={14} />Guía interactiva</button>
           {isAdmin && <button data-tour="gps-ref-save" type="button" onClick={saveConfig} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-xs font-black text-white hover:bg-cyan-500 disabled:opacity-50"><Save size={14} />{saving ? "Guardando…" : "Guardar y recalcular"}</button>}
         </div>
       </div>
