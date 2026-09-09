@@ -124,10 +124,31 @@ export function controlAutoFormula(rowNumber) {
   return `IF(AND(${requiredRefs}),IF(${dniRef}<>"",\"OK - Listo\",\"Alerta - Sin DNI (sin portal)\"),\"Falta - Datos obligatorios\")`;
 }
 
-export function writeControlAutoFormulas(sheet, firstRow, lastRow) {
+// Calcula el mismo resultado que la fórmula de Excel, pero en JS, a partir de
+// un array de valores en el orden de PLAYER_DATA_COLUMNS. Se usa para dejar
+// una "v" (valor cacheado) correcta junto a la fórmula: así cualquier lector
+// que no recalcule fórmulas (o una hoja recién generada, antes de que Excel la
+// recalcule) ya muestra el estado real en vez de quedar vacío o roto.
+function computeControlStatus(rowArray) {
+  const val = (key) => {
+    const i = PLAYER_DATA_COLUMNS.findIndex((c) => c.key === key);
+    return rowArray ? rowArray[i] : undefined;
+  };
+  const isFilled = (value) => value !== undefined && value !== null && String(value).trim() !== "";
+  const requiredOk = REQUIRED_KEYS.every((key) => isFilled(val(key)));
+  if (!requiredOk) return "Falta - Datos obligatorios";
+  return isFilled(val("dni")) ? "OK - Listo" : "Alerta - Sin DNI (sin portal)";
+}
+
+// `rowArrayForRow(rowNumber)`, si se pasa, debe devolver el array de valores
+// (orden de PLAYER_DATA_COLUMNS) para esa fila, usado para precalcular el
+// valor cacheado real. Sin ese callback (o si devuelve null/undefined), se
+// asume una fila en blanco.
+export function writeControlAutoFormulas(sheet, firstRow, lastRow, rowArrayForRow) {
   for (let r = firstRow; r <= lastRow; r += 1) {
     const ref = XLSX.utils.encode_cell({ r: r - 1, c: PLAYER_CONTROL_COLUMN_INDEX });
-    sheet[ref] = { t: "str", f: controlAutoFormula(r) };
+    const rowArray = rowArrayForRow ? rowArrayForRow(r) : null;
+    sheet[ref] = { t: "str", f: controlAutoFormula(r), v: computeControlStatus(rowArray) };
   }
 }
 
