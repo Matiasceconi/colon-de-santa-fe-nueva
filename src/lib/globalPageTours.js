@@ -179,6 +179,14 @@ export const GLOBAL_PAGE_TOURS = {
     intro("Guía del portal del jugador", "Explica cómo habilitar al jugador, compartir el acceso y verificar qué verá en su portal."),
     content("Flujo", "Creá o importá el Player, verificá documento, habilitá su acceso y compartí el enlace. Wellness y RPE aparecen según el cronograma y la sesión configurada."),
   ],
+  "/scouting": [
+    intro("Scouting & Recruitment", "Organiza todo el proceso de incorporaciones en un solo circuito: necesidad → mercado → observación → evidencia → decisión → incorporación. Ninguna etapa reemplaza el criterio profesional del área."),
+    content("1. Necesidades y Mercado", "Una Necesidad describe qué perfil busca el club: posición, plantel, prioridad y presupuesto. Mercado y Matching cruzan esa necesidad contra prospectos y señales de mercado para sugerir candidatos, sin decidir por vos."),
+    content("2. Pipeline, Prospectos, Asignaciones e Informes", "Cada prospecto avanza por etapas en el Pipeline. Asignaciones reparte tareas de observación entre el staff de scouting; los informes registran la evidencia de campo con recomendación y fit score."),
+    content("3. Comparador, Shadow Squad y Perfiles de rol", "El Comparador cruza prospectos contra jugadores propios. Shadow Squad simula la plantilla con incorporaciones potenciales. Los Perfiles de rol documentan qué criterios técnicos, tácticos, físicos y de mercado definen a un puesto."),
+    content("4. Reuniones, Calendario y Watchlists", "Reuniones registra decisiones formales del comité de recruitment. Calendario y alertas avisa vencimientos y seguimientos pendientes. Watchlists agrupa prospectos en listas temáticas para monitorear en el tiempo."),
+    intro("Dirección: el resumen ejecutivo", "La pestaña Dirección muestra alertas, necesidades críticas y el estado del pipeline en un solo vistazo antes de entrar al detalle de cada prospecto."),
+  ],
 };
 
 export const GLOBAL_TOUR_EXCLUDED_PREFIXES = [
