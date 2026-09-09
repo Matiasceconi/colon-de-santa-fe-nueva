@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { X, Lock, Eye, EyeOff, CheckCircle, Loader2, User } from "lucide-react";
+import { X, Lock, Eye, EyeOff, CheckCircle, Loader2, User, Camera } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useWorkspace } from "@/lib/WorkspaceContext";
 
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
 export default function UserProfileModal({ onClose }) {
-  const { user, logout } = useAuth();
+  const { user, logout, checkUserAuth } = useAuth();
   const { userAccess } = useWorkspace();
   const [tab, setTab] = useState("info");
   const [currentPwd, setCurrentPwd] = useState("");
@@ -15,6 +17,27 @@ export default function UserProfileModal({ onClose }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+
+  async function handlePhotoChange(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setPhotoError("Elegí un archivo de imagen."); return; }
+    if (file.size > MAX_PHOTO_BYTES) { setPhotoError("La imagen no puede superar los 5 MB."); return; }
+    setPhotoError("");
+    setUploadingPhoto(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await base44.auth.updateMe({ photo_url: file_url });
+      await checkUserAuth();
+    } catch {
+      setPhotoError("No pudimos subir la foto. Intentá nuevamente.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
 
   async function handleChangePassword(e) {
     e.preventDefault();
@@ -72,6 +95,23 @@ export default function UserProfileModal({ onClose }) {
         <div className="p-5">
           {tab === "info" && (
             <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden shrink-0">
+                  {user?.photo_url
+                    ? <img src={user.photo_url} className="w-12 h-12 rounded-full object-cover" alt="" />
+                    : <User size={20} className="text-zinc-400" />}
+                </div>
+                <div>
+                  <label className={`inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 transition-colors ${uploadingPhoto ? "opacity-60" : "cursor-pointer hover:text-blue-300"}`}>
+                    {uploadingPhoto
+                      ? <><Loader2 size={12} className="animate-spin" /> Subiendo...</>
+                      : <><Camera size={12} /> Cambiar foto</>}
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} disabled={uploadingPhoto} />
+                  </label>
+                  {photoError && <p className="mt-1 text-[11px] text-red-400">{photoError}</p>}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-zinc-500 text-xs mb-0.5">Email</p>
