@@ -20,7 +20,19 @@
     },
     "dni": {
       "type": "string",
-      "description": "DNI \u00fanico del jugador \u2014 identificador estable"
+      "description": "DNI \u00fanico del jugador \u2014 identificador estable",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "document_type": {
       "type": "string",
@@ -28,7 +40,19 @@
     },
     "document_number": {
       "type": "string",
-      "description": "DNI / Documento (alias de dni para compatibilidad)"
+      "description": "DNI / Documento (alias de dni para compatibilidad)",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "first_name": {
       "type": "string",
@@ -82,7 +106,19 @@
     },
     "full_address": {
       "type": "string",
-      "description": "Domicilio completo actual cuando el jugador no vive en pensi\u00f3n"
+      "description": "Domicilio completo actual cuando el jugador no vive en pensi\u00f3n",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "province": {
       "type": "string",
@@ -94,7 +130,19 @@
     },
     "phone_number": {
       "type": "string",
-      "description": "N\u00famero de celular del jugador"
+      "description": "N\u00famero de celular del jugador",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "housing_type": {
       "type": "string",
@@ -216,7 +264,7 @@
         "role": "admin"
       }
     },
-    "read": null,
+    "read": true,
     "update": {
       "user_condition": {
         "role": "admin"
