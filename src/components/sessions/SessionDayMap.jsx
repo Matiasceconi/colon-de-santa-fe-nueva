@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Download, Map as MapIcon, RotateCcw, Move, Users, HeartPulse, Activity, UserX } from "lucide-react";
 import { createBrandedPdf, buildExportFileName } from "@/lib/exports/pdfExportKit";
 import { assertExportAllowed } from "@/lib/exports/exportSecurity";
@@ -42,6 +42,11 @@ export default function SessionDayMap({ players, playerPhotos = {}, session = {}
   const [busy, setBusy] = useState(false);
   const [overrides, setOverrides] = useState({});
   const [dragId, setDragId] = useState(null);
+  const [failedPhotos, setFailedPhotos] = useState(() => new Set());
+
+  // Si cambia la sesión (otro día, otro plantel), las posiciones movidas a mano
+  // no deben quedar pegadas de una sesión a otra.
+  useEffect(() => { setOverrides({}); }, [session?.id]);
 
   const date = session.date ? session.date.slice(0,10).split("-").reverse().join("/") : "Sin fecha";
   const label = [session.name || session.title || (session.session_number ? "Sesión " + session.session_number : "Sesión"), session.squad_name, date].filter(Boolean).join(" · ");
@@ -253,8 +258,8 @@ export default function SessionDayMap({ players, playerPhotos = {}, session = {}
           const dotColor = isWarn ? "#fcd34d" : "#6ee7b7";
           const isDragging = dragId === key;
           return <g key={key}>
-            {photoUrl ? (
-              <image className="player-photo" href={photoUrl} x={cx-18} y={cy-18} width="36" height="36" clipPath={`url(#${clipId})`} preserveAspectRatio="xMidYMid slice" pointerEvents="none"/>
+            {photoUrl && !failedPhotos.has(key) ? (
+              <image className="player-photo" href={photoUrl} x={cx-18} y={cy-18} width="36" height="36" clipPath={`url(#${clipId})`} preserveAspectRatio="xMidYMid slice" pointerEvents="none" onError={() => setFailedPhotos(prev => new Set(prev).add(key))}/>
             ) : (
               <>
                 <circle cx={cx} cy={cy} r="18" fill="#374151" pointerEvents="none"/>
@@ -269,8 +274,14 @@ export default function SessionDayMap({ players, playerPhotos = {}, session = {}
         <text x="30" y={map.pitchBottom+25} fill="#d1fae5" fontSize="12">Verde: con el equipo · Amarillo: estado previo que merece revisión · Diferenciado y kinesiología se detallan debajo</text>
         <text x="30" y={map.pitchBottom+49} fill="#ffffff" fontSize="13">Con el equipo sin posición reconocida: {map.unknown.length}</text>
         {map.unknown.map((p,i)=><text key={p.player_id || p.id || i} x="30" y={map.pitchBottom+73+i*26} fill="#e5e7eb" fontSize="13">{p.player_name} · {p.position || "Sin posición"}</text>)}
-        <text x="30" y={map.pitchBottom+105+map.unknown.length*26} fill="#fbbf24" fontSize="13" fontWeight="700">Diferenciado ({map.diferenciados.length}): {map.diferenciados.map(p => p.player_name).filter(Boolean).join(" · ").slice(0,100)}</text>
-        <text x="30" y={map.pitchBottom+132+map.unknown.length*26} fill="#7dd3fc" fontSize="13" fontWeight="700">Kinesiología ({map.kinesiologia.length}): {map.kinesiologia.map(p => p.player_name).filter(Boolean).join(" · ").slice(0,100)}</text>
+        <text x="30" y={map.pitchBottom+map.diferenciadosHeaderY} fill="#fbbf24" fontSize="13" fontWeight="700">Diferenciado ({map.diferenciados.length}):</text>
+        {map.diferenciadosLines.map((line, i) => (
+          <text key={`dif-line-${i}`} x="30" y={map.pitchBottom+map.diferenciadosHeaderY+24+i*22} fill="#fde68a" fontSize="12">{line}</text>
+        ))}
+        <text x="30" y={map.pitchBottom+map.kinesiologiaHeaderY} fill="#7dd3fc" fontSize="13" fontWeight="700">Kinesiología ({map.kinesiologia.length}):</text>
+        {map.kinesiologiaLines.map((line, i) => (
+          <text key={`kin-line-${i}`} x="30" y={map.pitchBottom+map.kinesiologiaHeaderY+24+i*22} fill="#bae6fd" fontSize="12">{line}</text>
+        ))}
       </svg>
     </div>
     <div className="grid lg:grid-cols-2 gap-3">
