@@ -21,7 +21,6 @@ import IngresoJugador from '@/pages/IngresoJugador';
 import AccessScreen from '@/components/AccessScreen';
 import StaffDashboard from '@/pages/StaffDashboard';
 import Sessions from '@/pages/Sessions';
-import Catapult from '@/pages/Catapult';
 import PerformanceExternalLoad from '@/pages/PerformanceExternalLoad';
 import PerformanceDashboard from '@/pages/PerformanceDashboard';
 import MicrocycleHistory from '@/pages/MicrocycleHistory';
@@ -121,7 +120,6 @@ function StaffRoutes() {
             <Route path="/club-identity-admin" element={<ClubIdentityAdmin />} />
             <Route path="/dashboard" element={<StaffDashboard />} />
             <Route path="/sessions" element={<Sessions />} />
-            <Route path="/catapult" element={<Catapult />} />
             <Route path="/performance/dashboard" element={<PerformanceDashboard />} />
             <Route path="/performance/external-load" element={<PerformanceExternalLoad />} />
             <Route path="/gps" element={<PerformanceExternalLoad />} />
